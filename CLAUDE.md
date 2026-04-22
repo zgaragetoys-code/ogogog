@@ -19,13 +19,35 @@ No payment processing on-platform. Users settle deals via PayPal G&S externally.
 - **DNS/Domain:** Cloudflare
 - **Transactional email:** Resend
 - **Card data:** TCGdex (tcgdex.dev) — imported once into Supabase, not called at runtime
-- **Payments:** None in v1/v2. Stripe only for v3 premium subscriptions.
-- **Pricing API:** None, ever. Users set their own prices. No TCGPlayer, PokemonPriceTracker, etc.
+- **Pricing API:** None, ever. Users set their own prices.
+- **Stripe:** Env vars reserved for possible future one-off payments (e.g. automating featured listing purchases). Not integrated, no subscription products.
 
 ---
 
 ## Hosting Philosophy
 Stay within free tiers. Prefer free-at-small-scale over more scalable but paid.
+
+---
+
+## Monetization Strategy — Manual Only Until Scale Justifies Automation
+
+### Featured listings (v1 — manual flow)
+- `/feature-your-listing` — static page explaining the offer: "Want your listing seen by more collectors? Email [contact] with your listing URL. Rate: $X/7 days, $Y/30 days." (rates TBD)
+- `/featured` — public page showing all currently-featured listings
+- `is_featured boolean` + `featured_until timestamptz` columns on `listings` table
+- Featured listings appear in the main feed at roughly every 5th position, visually distinct with a "Featured" badge
+- `/admin/featured` — admin-only route to manually toggle `is_featured` and set `featured_until`. Access controlled by `ADMIN_EMAIL` env variable — only that logged-in email sees the UI
+- No automated payment flow. Owner manually sets featured status after payment is confirmed offline.
+
+### Display ads (future — not building yet)
+- Planned eventually via Ezoic or Mediavine once traffic justifies it
+- Ad placement slots **architecturally reserved** in feed and sidebar layouts but **left empty in implementation**
+- When building feed and layout components, include the slot divs with a comment but render nothing inside them
+
+### What is NOT monetized
+- No premium tier, no subscription gating, no paid features
+- All features are free for all users
+- No Stripe subscription products, no pricing page, no tier comparison UI
 
 ---
 
@@ -42,20 +64,22 @@ Stay within free tiers. Prefer free-at-small-scale over more scalable but paid.
 8. User profiles showing their active listings
 9. Card-scoped messaging — separate thread per (listing, user pair)
 10. Mark listing as sold — thread greys out
+11. `/featured` and `/feature-your-listing` static pages
+12. `/admin/featured` admin route
 
 ### Explicitly out of scope for v1
 - Payment processing (users pay each other via PayPal G&S)
 - Image uploads (external URLs only)
 - Pricing API integration
-- Collectr CSV import
-- Automated buy/sell matching engine
-- Seller/buyer rating system
-- Premium subscriptions (Stripe)
+- Collectr CSV import (v2)
+- Automated buy/sell matching engine (v2)
+- Seller/buyer rating system (v2)
+- Premium subscriptions or paid tiers (never — all features free)
 - Multi-TCG support
 - Mobile native apps
 - Deck building tools
 - Escrow or card authentication services
-- Social logins (Google/GitHub)
+- Social logins (Google/GitHub) — can add later
 
 ---
 
@@ -86,52 +110,48 @@ No separate `sets` table. Set info is denormalized onto each card row.
 ```
 id              uuid PK → auth.users
 username        text UNIQUE
-avatar_url      text
-bio             text
-seller_rating_total / seller_rating_count  integer (running totals)
-buyer_rating_total  / buyer_rating_count   integer (running totals)
+avatar_url, bio text
+seller/buyer _rating_total/_count  integer (running totals for averages)
 created_at, updated_at
 ```
 
 ### `listings` table
 ```
-id                      uuid PK
-user_id                 uuid → auth.users
-card_id                 text → cards
-listing_type            enum: 'for_sale' | 'wanted'
-condition_type          enum: 'raw' | 'graded' | 'sealed'
-raw_condition           enum: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'       -- if raw
-sealed_condition        enum: 'factory_sealed' | 'sealed_no_outer_wrap'
-                              | 'opened_contents_sealed' | 'opened_partial'
-                              | 'damaged'                               -- if sealed
-grading_company         enum: 'PSA' | 'CGC' | 'BGS' | 'SGC'           -- if graded
-grade                   numeric(4,1)   -- 1.0–10.0 supports half grades
-price                   numeric(10,2)
-notes                   text           -- unlimited, included in full-text search
-photo_links             text[]         -- external URLs, max ~10
-photo_notes             text
-master_set_completion   enum: '100_percent' | 'near_complete' | 'partial'
-                              -- only when product_type = 'master_set'
-master_set_included_cards text         -- user describes what's included
-status                  enum: 'active' | 'pending' | 'sold' | 'cancelled'
+id                        uuid PK
+user_id                   uuid → auth.users
+card_id                   text → cards
+listing_type              enum: 'for_sale' | 'wanted'
+condition_type            enum: 'raw' | 'graded' | 'sealed'
+raw_condition             enum: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+sealed_condition          enum: 'factory_sealed' | 'sealed_no_outer_wrap'
+                                | 'opened_contents_sealed' | 'opened_partial' | 'damaged'
+grading_company           enum: 'PSA' | 'CGC' | 'BGS' | 'SGC'
+grade                     numeric(4,1)   -- 1.0–10.0, supports half grades
+price                     numeric(10,2)
+notes                     text
+photo_links               text[]
+photo_notes               text
+master_set_completion     enum: '100_percent' | 'near_complete' | 'partial'
+master_set_included_cards text
+is_featured               boolean DEFAULT false
+featured_until            timestamptz
+status                    enum: 'active' | 'pending' | 'sold' | 'cancelled'
 created_at, updated_at
 ```
 
-**Constraints:**
-- `raw_condition` and `grading_company` are mutually exclusive
-- `sealed_condition` only applies when card's `product_type` is a sealed type
-- Graded sealed products are allowed (CGC grades boxes, BGS grades packs)
-- Graded cards require both `grading_company` and `grade`
+**Key constraints:** raw_condition and grading_company mutually exclusive; sealed_condition
+only on sealed product types; graded sealed products allowed (CGC boxes etc.);
+graded requires both company and grade.
 
 ### `messages` table
 ```
 id           uuid PK
-listing_id   uuid → listings  (card-scoped: thread = all msgs on a listing between two users)
+listing_id   uuid → listings
 sender_id    uuid → auth.users
 receiver_id  uuid → auth.users
 content      text
 created_at   timestamptz
-read_at      timestamptz      -- null = unread
+read_at      timestamptz   -- null = unread
 ```
 
 RLS: only sender and receiver can read/write their messages.
@@ -140,23 +160,19 @@ RLS: only sender and receiver can read/write their messages.
 
 ## Photo Links (listings)
 
-- No image uploads. Users paste external URLs (Imgur, Google Drive, OneDrive, Dropbox, Discord CDN, personal sites, etc.)
-- Stored as `photo_links text[]` on listings, soft-limit ~10 with warning
-- `photo_notes text` optional field alongside photos
-- UI: section titled "Photos (optional)" with help tooltip; each link is a text input + Remove button; "+ Add another link" button
-- Live preview: if URL ends in `.jpg/.png/.webp/.gif` → small thumbnail; otherwise → link card showing domain
-- On listing detail: direct images embed inline (click to enlarge); non-image URLs shown as clickable cards with "Opens in new tab"
+- No image uploads. Users paste external URLs (Imgur, Google Drive, OneDrive, Dropbox, Discord CDN, etc.)
+- Stored as `photo_links text[]`, soft-limit ~10 with warning
+- `photo_notes text` optional field
+- On listing detail: direct image URLs (`.jpg/.png/.webp/.gif`) embed inline with click-to-enlarge; other URLs shown as link cards with domain + "Opens in new tab"
 - Always `target="_blank" rel="noopener noreferrer"` on external links
-- Use `referrerpolicy="no-referrer"` on embedded images
-- URL sanitization: only allow `https://` (or `http://`); reject `javascript:` and `data:` URIs
-- Help modal: recommend Imgur, mention Google Drive/OneDrive/Dropbox/Discord/Instagram, remind users links must be public
+- `referrerpolicy="no-referrer"` on embedded images
+- URL sanitization: only `http://` or `https://`; reject `javascript:` and `data:` URIs
 
 ---
 
 ## Authentication (built and working)
 
-- Email + password primary
-- Magic link as secondary / password recovery option
+- Email + password primary; magic link as secondary/recovery
 - Email confirmation required before login
 - No social logins in v1
 - Supabase Auth with `@supabase/ssr` for cookie-based sessions
@@ -164,15 +180,12 @@ RLS: only sender and receiver can read/write their messages.
 
 ---
 
-## Card Data — TCGdex Import
+## Card Data — TCGdex Import (complete)
 
-- Source: TCGdex (tcgdex.dev) — free, open source, full DB on GitHub
-- Strategy: one-time import script runs locally, populates `cards` table
-- Runtime: zero external API calls for card data in production
-- Re-sync: monthly Supabase Edge Function cron to pick up new sets (upsert — never overwrites existing)
+- 23,159 cards across 208 sets imported into Supabase
 - Import script: `scripts/import-tcgdex.ts` — run with `npm run import:tcgdex`
-- Requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (uses service role to bypass RLS)
-- Import is idempotent — safe to re-run
+- Re-sync plan: monthly Supabase Edge Function cron (upsert — never overwrites existing data)
+- Phase 2 enrichment (rarity, types, hp) deferred — not a v1 blocker
 
 ---
 
@@ -183,15 +196,20 @@ RLS: only sender and receiver can read/write their messages.
 | Project setup (Node, git, Next.js) | ✅ Done |
 | Supabase client wired up | ✅ Done |
 | Auth (signup, login, magic link, signout) | ✅ Done — tested in browser |
-| Database schema SQL | ❌ Needs rewrite to match specs above |
-| TCGdex import script | ⚠️ Written but references old schema — needs update after schema rewrite |
-| Database migrated in Supabase | ❌ Not yet — pending schema rewrite |
-| Card catalog imported | ❌ Not yet — pending migration |
-| Listing creation | ❌ Not started |
+| Database schema (001_initial_schema.sql) | ✅ Done — run in Supabase |
+| Featured listing columns (002_add_featured.sql) | ⚠️ Written — needs to be run in Supabase |
+| TCGdex card catalog import | ✅ Done — 23,159 cards |
+| TypeScript database types | ✅ Done — types/database.ts |
+| Card search component | ✅ Done — components/CardSearch.tsx |
+| Listing creation form (client) | ✅ Done — app/listings/new/NewListingClient.tsx |
+| Listing creation server action + page | 🔄 Next up |
+| /listings/mine stub page | 🔄 Next up (commit 4) |
 | Public feed | ❌ Not started |
 | Listing detail pages | ❌ Not started |
 | User profiles | ❌ Not started |
 | Messaging | ❌ Not started |
+| /featured + /feature-your-listing | ❌ Not started |
+| /admin/featured | ❌ Not started |
 
 ---
 
@@ -199,11 +217,25 @@ RLS: only sender and receiver can read/write their messages.
 - TypeScript throughout
 - Next.js App Router — server components by default; `"use client"` only for interactivity/hooks
 - Supabase: `@supabase/ssr` for cookie-based auth in Next.js
-- Environment variables: never commit `.env.local` — use `.env.local.example` as template
-- Tailwind only for styling
+- Environment variables: never commit `.env.local` — template in `.env.local.example`
+- Tailwind only for styling — no separate CSS files
 - One component per file, small and focused
 - No comments explaining what code does — only why, when non-obvious
-- No error handling for impossible scenarios — trust the DB constraints and type system
+- No error handling for impossible scenarios — trust DB constraints and type system
+- Ad placement slots: include empty `<div>` with comment in feed/layout, render nothing
+
+---
+
+## Environment Variables
+```
+NEXT_PUBLIC_SUPABASE_URL          — Supabase project URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — Supabase anon/publishable key
+NEXT_PUBLIC_SITE_URL              — e.g. http://localhost:3000
+SUPABASE_SERVICE_ROLE_KEY         — Secret, server/script only
+ADMIN_EMAIL                       — Email address that gets /admin access
+STRIPE_SECRET_KEY                 — Reserved, not yet used
+STRIPE_PUBLISHABLE_KEY            — Reserved, not yet used
+```
 
 ---
 
