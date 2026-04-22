@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   PRODUCT_TYPE_LABELS,
   RAW_CONDITION_LABELS,
@@ -97,7 +98,7 @@ export default function ListingCard({ item }: { item: FeedItem }) {
   if (item.kind === "card") {
     const { data } = item;
     return (
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col relative">
+      <Link href={`/listings/${data.id}`} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col relative hover:shadow-md transition-shadow">
         {data.is_featured && (
           <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-0.5 tracking-wide">
             ✦ Featured
@@ -131,13 +132,13 @@ export default function ListingCard({ item }: { item: FeedItem }) {
             <TypeBadge type={data.listing_type} />
           </div>
         </div>
-      </div>
+      </Link>
     );
   }
 
   const { data } = item;
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col relative">
+    <Link href={`/listings/${data.id}`} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col relative hover:shadow-md transition-shadow">
       {data.is_featured && (
         <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-0.5 tracking-wide">
           ✦ Featured
@@ -167,6 +168,6 @@ export default function ListingCard({ item }: { item: FeedItem }) {
           <TypeBadge type={data.listing_type} />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
