@@ -63,7 +63,6 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
   const displayName = profile.display_name ?? profile.username ?? email;
 
   const socialLinks = [
-    profile.collectr_url && { href: profile.collectr_url, label: "Collectr" },
     profile.tcgplayer_url && { href: profile.tcgplayer_url, label: "TCGplayer" },
     profile.ebay_username && { href: `https://www.ebay.com/usr/${profile.ebay_username}`, label: `eBay: ${profile.ebay_username}` },
     profile.facebook_url && { href: profile.facebook_url, label: "Facebook" },
@@ -98,11 +97,37 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
         </div>
         <button
           onClick={onEdit}
-          className="text-sm text-blue-600 hover:underline shrink-0"
+          className="flex items-center gap-1.5 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors shrink-0 text-black"
         >
-          Edit profile
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Edit
         </button>
       </div>
+
+      {/* Collectr collection */}
+      {profile.collectr_url && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-black">My Collection</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{profile.collectr_url}</p>
+          </div>
+          <a
+            href={profile.collectr_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium shrink-0"
+          >
+            View on Collectr
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      )}
 
       {/* Notes */}
       {profile.notes && (
