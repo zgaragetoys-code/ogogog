@@ -175,9 +175,43 @@ export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
   sealed: "Sealed",
 };
 
+export const AVATAR_STYLES = [
+  "adventurer",
+  "avataaars",
+  "bottts",
+  "fun-emoji",
+  "identicon",
+  "lorelei",
+  "pixel-art",
+  "shapes",
+  "thumbs",
+  "big-smile",
+] as const;
+export type AvatarStyle = (typeof AVATAR_STYLES)[number];
+
 // ----------------------------------------------------------------
 // Database row types
 // ----------------------------------------------------------------
+
+export interface Profile {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_seed: string | null;
+  avatar_style: AvatarStyle | null;
+  country: string | null;
+  region: string | null;
+  notes: string | null;
+  collectr_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  ebay_username: string | null;
+  discord_username: string | null;
+  tcgplayer_url: string | null;
+  website_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Card {
   id: string;
