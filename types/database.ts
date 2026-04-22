@@ -258,6 +258,8 @@ export interface Listing {
   photo_notes: string | null;
   master_set_completion: MasterSetCompletion | null;
   master_set_included_cards: string | null;
+  is_featured: boolean;
+  featured_until: string | null;
   created_at: string;
   updated_at: string;
 }
