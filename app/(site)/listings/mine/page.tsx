@@ -32,20 +32,6 @@ export default async function MyListingsPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-bold text-black">
-            Pokemon TCG Marketplace
-          </Link>
-          <Link
-            href="/listings/new"
-            className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            + New listing
-          </Link>
-        </div>
-      </header>
-
       <main className="max-w-4xl mx-auto px-4 py-8">
         {created === "1" && (
           <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-xl text-sm font-medium">
