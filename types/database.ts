@@ -57,6 +57,39 @@ export const LISTING_STATUSES = [
 ] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
+export const CUSTOM_CATEGORIES = [
+  "custom_card",
+  "accessories",
+  "storage",
+  "slab_case",
+  "loose_cards",
+  "damaged_cards",
+  "miscellaneous",
+  "other",
+] as const;
+export type CustomCategory = (typeof CUSTOM_CATEGORIES)[number];
+
+export const CUSTOM_CATEGORY_LABELS: Record<CustomCategory, string> = {
+  custom_card:   "Custom Card",
+  accessories:   "Accessories",
+  storage:       "Storage",
+  slab_case:     "Slab / Case",
+  loose_cards:   "Loose Cards",
+  damaged_cards: "Damaged Cards",
+  miscellaneous: "Miscellaneous",
+  other:         "Other",
+};
+
+export const GENERIC_CONDITIONS = ["new", "like_new", "used", "damaged"] as const;
+export type GenericCondition = (typeof GENERIC_CONDITIONS)[number];
+
+export const GENERIC_CONDITION_LABELS: Record<GenericCondition, string> = {
+  new:       "New",
+  like_new:  "Like New",
+  used:      "Used",
+  damaged:   "Damaged",
+};
+
 export const CONDITION_TYPES = ["raw", "graded", "sealed"] as const;
 export type ConditionType = (typeof CONDITION_TYPES)[number];
 
@@ -185,4 +218,24 @@ export interface Listing {
 // Listing row joined with its card — used on feed and profile pages
 export interface ListingWithCard extends Listing {
   card: Card;
+}
+
+export interface CustomListing {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  custom_category: CustomCategory;
+  condition_generic: GenericCondition;
+  listing_type: ListingType;
+  price_type: PriceType;
+  price: number | null;
+  notes: string | null;
+  photo_links: string[];
+  photo_notes: string | null;
+  is_featured: boolean;
+  featured_until: string | null;
+  status: ListingStatus;
+  created_at: string;
+  updated_at: string;
 }
