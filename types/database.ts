@@ -40,6 +40,15 @@ export const SEALED_PRODUCT_TYPES = new Set<ProductType>([
 export const LISTING_TYPES = ["for_sale", "wanted"] as const;
 export type ListingType = (typeof LISTING_TYPES)[number];
 
+export const PRICE_TYPES = ["firm", "obo", "open_to_offers"] as const;
+export type PriceType = (typeof PRICE_TYPES)[number];
+
+export const PRICE_TYPE_LABELS: Record<PriceType, string> = {
+  firm: "Firm price",
+  obo: "Or Best Offer",
+  open_to_offers: "Open to offers",
+};
+
 export const LISTING_STATUSES = [
   "active",
   "pending",
@@ -162,6 +171,7 @@ export interface Listing {
   sealed_condition: SealedCondition | null;
   grading_company: GradingCompany | null;
   grade: number | null;
+  price_type: PriceType;
   price: number | null;
   notes: string | null;
   photo_links: string[];

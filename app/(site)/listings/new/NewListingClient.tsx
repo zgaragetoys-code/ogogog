@@ -11,12 +11,15 @@ import {
   GRADE_OPTIONS,
   RAW_CONDITION_LABELS,
   SEALED_CONDITION_LABELS,
+  PRICE_TYPES,
+  PRICE_TYPE_LABELS,
   type Card,
   type ListingType,
   type ConditionType,
   type RawCondition,
   type SealedCondition,
   type GradingCompany,
+  type PriceType,
 } from "@/types/database";
 
 const MAX_PHOTO_LINKS = 10;
@@ -33,7 +36,6 @@ function isValidHttpUrl(url: string): boolean {
 
 type Errors = Record<string, string>;
 
-// Shared Tailwind class strings
 const inputCls =
   "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black " +
   "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
@@ -47,13 +49,10 @@ export default function NewListingClient() {
   const [listingType, setListingType] = useState<ListingType>("for_sale");
   const [conditionType, setConditionType] = useState<ConditionType>("raw");
   const [rawCondition, setRawCondition] = useState<RawCondition | "">("");
-  const [sealedCondition, setSealedCondition] = useState<SealedCondition | "">(
-    ""
-  );
-  const [gradingCompany, setGradingCompany] = useState<GradingCompany | "">(
-    ""
-  );
+  const [sealedCondition, setSealedCondition] = useState<SealedCondition | "">("");
+  const [gradingCompany, setGradingCompany] = useState<GradingCompany | "">("");
   const [grade, setGrade] = useState("");
+  const [priceType, setPriceType] = useState<PriceType>("firm");
   const [price, setPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [photoLinks, setPhotoLinks] = useState<string[]>([]);
@@ -64,12 +63,10 @@ export default function NewListingClient() {
 
   const cardIsSealed = card ? SEALED_PRODUCT_TYPES.has(card.product_type) : false;
   const gradeChoices = gradingCompany ? GRADE_OPTIONS[gradingCompany] : [];
-
-  // ── Handlers ───────────────────────────────────────────────────
+  const showPriceInput = priceType !== "open_to_offers";
 
   function handleCardSelect(selected: Card | null) {
     setCard(selected);
-    // If the newly selected card is not a sealed product and condition is sealed, reset
     if (selected && !SEALED_PRODUCT_TYPES.has(selected.product_type) && conditionType === "sealed") {
       resetConditionFields("raw");
     }
@@ -86,7 +83,13 @@ export default function NewListingClient() {
 
   function handleGradingCompanyChange(company: GradingCompany | "") {
     setGradingCompany(company);
-    setGrade(""); // grades differ per company — clear on change
+    setGrade("");
+  }
+
+  function handlePriceTypeChange(type: PriceType) {
+    setPriceType(type);
+    if (type === "open_to_offers") setPrice("");
+    setErrors((prev) => ({ ...prev, price: "" }));
   }
 
   function addPhotoLink() {
@@ -101,38 +104,32 @@ export default function NewListingClient() {
     setPhotoLinks((prev) => prev.filter((_, j) => j !== i));
   }
 
-  // ── Validation ─────────────────────────────────────────────────
-
   function validate(): boolean {
     const errs: Errors = {};
 
-    if (!card) {
-      errs.card = "Please select a card.";
-    }
+    if (!card) errs.card = "Please select a card.";
 
     if (conditionType === "raw" && !rawCondition) {
       errs.rawCondition = "Please select a condition grade.";
     }
-
     if (conditionType === "sealed" && !sealedCondition) {
       errs.sealedCondition = "Please select a sealed condition.";
     }
-
     if (conditionType === "graded") {
       if (!gradingCompany) errs.gradingCompany = "Please select a grading company.";
       if (!grade) errs.grade = "Please select a grade.";
     }
 
-    if (listingType === "for_sale" && !price) {
-      errs.price = "Price is required for For Sale listings.";
-    }
-
-    if (price) {
-      const p = parseFloat(price);
-      if (isNaN(p) || p <= 0) {
-        errs.price = "Please enter a valid price.";
-      } else if (p > MAX_PRICE) {
-        errs.price = `Max price is $${MAX_PRICE.toLocaleString()}.`;
+    if (showPriceInput) {
+      if (!price) {
+        errs.price = "Price is required for this pricing type.";
+      } else {
+        const p = parseFloat(price);
+        if (isNaN(p) || p <= 0) {
+          errs.price = "Please enter a valid price.";
+        } else if (p > MAX_PRICE) {
+          errs.price = `Max price is $${MAX_PRICE.toLocaleString()}.`;
+        }
       }
     }
 
@@ -145,8 +142,6 @@ export default function NewListingClient() {
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
-
-  // ── Submit ─────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -163,23 +158,18 @@ export default function NewListingClient() {
     if (sealedCondition) fd.set("sealed_condition", sealedCondition);
     if (gradingCompany) fd.set("grading_company", gradingCompany);
     if (grade) fd.set("grade", grade);
+    fd.set("price_type", priceType);
     if (price) fd.set("price", price);
     if (notes.trim()) fd.set("notes", notes.trim());
     if (photoNotes.trim()) fd.set("photo_notes", photoNotes.trim());
-    fd.set(
-      "photo_links",
-      JSON.stringify(photoLinks.map((l) => l.trim()).filter(Boolean))
-    );
+    fd.set("photo_links", JSON.stringify(photoLinks.map((l) => l.trim()).filter(Boolean)));
 
     const result = await createListing(fd);
     if (result?.error) {
       setServerError(result.error);
       setSubmitting(false);
     }
-    // On success the server action redirects — nothing more to do here
   }
-
-  // ── Render ─────────────────────────────────────────────────────
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -191,7 +181,6 @@ export default function NewListingClient() {
         {errors.card && <p className={errorCls}>{errors.card}</p>}
       </div>
 
-      {/* 2-6: Only revealed after a card is chosen */}
       {card && (
         <>
           {/* 2. Listing type */}
@@ -219,7 +208,6 @@ export default function NewListingClient() {
           <div className={sectionCls}>
             <h2 className={sectionTitleCls}>3. Condition</h2>
 
-            {/* Condition type buttons — Sealed hidden for single cards */}
             <div className="flex gap-3 mb-5">
               {(["raw", "graded", ...(cardIsSealed ? ["sealed"] : [])] as ConditionType[]).map(
                 (type) => (
@@ -239,12 +227,9 @@ export default function NewListingClient() {
               )}
             </div>
 
-            {/* Raw */}
             {conditionType === "raw" && (
               <div>
-                <label htmlFor="raw_condition" className={labelCls}>
-                  Condition grade
-                </label>
+                <label htmlFor="raw_condition" className={labelCls}>Condition grade</label>
                 <select
                   id="raw_condition"
                   value={rawCondition}
@@ -253,49 +238,34 @@ export default function NewListingClient() {
                 >
                   <option value="">Select grade…</option>
                   {RAW_CONDITIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {RAW_CONDITION_LABELS[c]}
-                    </option>
+                    <option key={c} value={c}>{RAW_CONDITION_LABELS[c]}</option>
                   ))}
                 </select>
-                {errors.rawCondition && (
-                  <p className={errorCls}>{errors.rawCondition}</p>
-                )}
+                {errors.rawCondition && <p className={errorCls}>{errors.rawCondition}</p>}
               </div>
             )}
 
-            {/* Graded */}
             {conditionType === "graded" && (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="grading_company" className={labelCls}>
-                    Grading company
-                  </label>
+                  <label htmlFor="grading_company" className={labelCls}>Grading company</label>
                   <select
                     id="grading_company"
                     value={gradingCompany}
-                    onChange={(e) =>
-                      handleGradingCompanyChange(e.target.value as GradingCompany)
-                    }
+                    onChange={(e) => handleGradingCompanyChange(e.target.value as GradingCompany)}
                     className={inputCls}
                   >
                     <option value="">Select company…</option>
                     {GRADING_COMPANIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
-                  {errors.gradingCompany && (
-                    <p className={errorCls}>{errors.gradingCompany}</p>
-                  )}
+                  {errors.gradingCompany && <p className={errorCls}>{errors.gradingCompany}</p>}
                 </div>
 
                 {gradingCompany && (
                   <div>
-                    <label htmlFor="grade" className={labelCls}>
-                      Grade
-                    </label>
+                    <label htmlFor="grade" className={labelCls}>Grade</label>
                     <select
                       id="grade"
                       value={grade}
@@ -304,43 +274,30 @@ export default function NewListingClient() {
                     >
                       <option value="">Select grade…</option>
                       {gradeChoices.map((g) => (
-                        <option key={g} value={String(g)}>
-                          {g}
-                        </option>
+                        <option key={g} value={String(g)}>{g}</option>
                       ))}
                     </select>
-                    {errors.grade && (
-                      <p className={errorCls}>{errors.grade}</p>
-                    )}
+                    {errors.grade && <p className={errorCls}>{errors.grade}</p>}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Sealed */}
             {conditionType === "sealed" && (
               <div>
-                <label htmlFor="sealed_condition" className={labelCls}>
-                  Sealed condition
-                </label>
+                <label htmlFor="sealed_condition" className={labelCls}>Sealed condition</label>
                 <select
                   id="sealed_condition"
                   value={sealedCondition}
-                  onChange={(e) =>
-                    setSealedCondition(e.target.value as SealedCondition)
-                  }
+                  onChange={(e) => setSealedCondition(e.target.value as SealedCondition)}
                   className={inputCls}
                 >
                   <option value="">Select condition…</option>
                   {SEALED_CONDITIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {SEALED_CONDITION_LABELS[c]}
-                    </option>
+                    <option key={c} value={c}>{SEALED_CONDITION_LABELS[c]}</option>
                   ))}
                 </select>
-                {errors.sealedCondition && (
-                  <p className={errorCls}>{errors.sealedCondition}</p>
-                )}
+                {errors.sealedCondition && <p className={errorCls}>{errors.sealedCondition}</p>}
               </div>
             )}
           </div>
@@ -348,31 +305,57 @@ export default function NewListingClient() {
           {/* 4. Price */}
           <div className={sectionCls}>
             <h2 className={sectionTitleCls}>4. Price</h2>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black select-none">
-                $
-              </span>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder={
-                  listingType === "wanted"
-                    ? "Optional — leave blank to invite offers"
-                    : "0.00"
-                }
-                min="0.01"
-                max={MAX_PRICE}
-                step="0.01"
-                className={`${inputCls} pl-7`}
-              />
+
+            {/* Three-state selector */}
+            <div className="flex gap-2 mb-4">
+              {PRICE_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handlePriceTypeChange(type)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    priceType === type
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-black border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {PRICE_TYPE_LABELS[type]}
+                </button>
+              ))}
             </div>
-            {listingType === "wanted" && !price && (
-              <p className="text-xs text-black mt-1">
-                No price set — your listing will show &ldquo;Make an offer&rdquo;
+
+            {priceType === "open_to_offers" ? (
+              <p className="text-sm text-black">
+                Your listing will show &ldquo;Make an offer&rdquo; — no price displayed.
               </p>
+            ) : (
+              <div>
+                <label htmlFor="price" className={labelCls}>
+                  {priceType === "obo"
+                    ? listingType === "wanted"
+                      ? "Maximum price (starting point)"
+                      : "Asking price (starting point)"
+                    : "Price"}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black select-none">
+                    $
+                  </span>
+                  <input
+                    id="price"
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0.00"
+                    min="0.01"
+                    max={MAX_PRICE}
+                    step="0.01"
+                    className={`${inputCls} pl-7`}
+                  />
+                </div>
+                {errors.price && <p className={errorCls}>{errors.price}</p>}
+              </div>
             )}
-            {errors.price && <p className={errorCls}>{errors.price}</p>}
           </div>
 
           {/* 5. Notes */}
@@ -385,16 +368,13 @@ export default function NewListingClient() {
               rows={4}
               className={`${inputCls} resize-y`}
             />
-            <p className="text-xs text-black mt-1 text-right">
-              {notes.length} characters
-            </p>
+            <p className="text-xs text-black mt-1 text-right">{notes.length} characters</p>
           </div>
 
           {/* 6. Photos */}
           <div className={sectionCls}>
             <h2 className={sectionTitleCls}>
-              6. Photos{" "}
-              <span className="font-normal text-sm">(optional)</span>
+              6. Photos <span className="font-normal text-sm">(optional)</span>
             </h2>
             <p className="text-xs text-black mb-4">
               Paste links from Imgur, Google Drive, Dropbox, Discord, or any
@@ -445,8 +425,7 @@ export default function NewListingClient() {
             {photoLinks.length > 0 && (
               <div className="mt-4">
                 <label htmlFor="photo_notes" className={labelCls}>
-                  Photo notes{" "}
-                  <span className="font-normal">(optional)</span>
+                  Photo notes <span className="font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -460,11 +439,8 @@ export default function NewListingClient() {
             )}
           </div>
 
-          {/* Submit */}
           {serverError && (
-            <p className="text-sm text-red-600 text-center px-4">
-              {serverError}
-            </p>
+            <p className="text-sm text-red-600 text-center px-4">{serverError}</p>
           )}
 
           <button

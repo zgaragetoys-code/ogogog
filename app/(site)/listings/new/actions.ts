@@ -10,11 +10,13 @@ import {
   GRADING_COMPANIES,
   SEALED_PRODUCT_TYPES,
   GRADE_OPTIONS,
+  PRICE_TYPES,
   type ListingType,
   type ConditionType,
   type RawCondition,
   type SealedCondition,
   type GradingCompany,
+  type PriceType,
 } from "@/types/database";
 
 const MAX_PRICE = 100_000;
@@ -32,7 +34,6 @@ function sanitizePhotoLinks(raw: unknown): { links: string[]; error?: string } {
     } catch {
       return { links: [], error: `Invalid URL: ${url}` };
     }
-    // Reject anything that isn't plain http/https — blocks javascript: and data: URIs
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return { links: [], error: `URL must start with http:// or https://: ${url}` };
     }
@@ -51,7 +52,6 @@ export async function createListing(
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in to create a listing." };
 
-  // ── Extract fields ──────────────────────────────────────────────
   const cardId = formData.get("card_id") as string | null;
   const listingTypeRaw = formData.get("listing_type") as string | null;
   const conditionTypeRaw = formData.get("condition_type") as string | null;
@@ -59,18 +59,17 @@ export async function createListing(
   const sealedConditionRaw = formData.get("sealed_condition") as string | null;
   const gradingCompanyRaw = formData.get("grading_company") as string | null;
   const gradeStr = formData.get("grade") as string | null;
+  const priceTypeRaw = formData.get("price_type") as string | null;
   const priceStr = formData.get("price") as string | null;
   const notes = (formData.get("notes") as string | null) || null;
   const photoLinksJson = formData.get("photo_links") as string | null;
   const photoNotes = (formData.get("photo_notes") as string | null) || null;
 
-  // ── Validate listing type ───────────────────────────────────────
   if (!listingTypeRaw || !LISTING_TYPES.includes(listingTypeRaw as ListingType)) {
     return { error: "Invalid listing type." };
   }
   const listingType = listingTypeRaw as ListingType;
 
-  // ── Validate card exists ────────────────────────────────────────
   if (!cardId) return { error: "No card selected." };
   const { data: card } = await supabase
     .from("cards")
@@ -79,13 +78,11 @@ export async function createListing(
     .single();
   if (!card) return { error: "Card not found." };
 
-  // ── Validate condition type ─────────────────────────────────────
   if (!conditionTypeRaw || !CONDITION_TYPES.includes(conditionTypeRaw as ConditionType)) {
     return { error: "Invalid condition type." };
   }
   const conditionType = conditionTypeRaw as ConditionType;
 
-  // ── Validate condition sub-fields ───────────────────────────────
   let rawCondition: RawCondition | null = null;
   let sealedCondition: SealedCondition | null = null;
   let gradingCompany: GradingCompany | null = null;
@@ -123,18 +120,19 @@ export async function createListing(
     grade = parsedGrade;
   }
 
-  // ── Validate price ──────────────────────────────────────────────
+  if (!priceTypeRaw || !PRICE_TYPES.includes(priceTypeRaw as PriceType)) {
+    return { error: "Invalid price type." };
+  }
+  const priceType = priceTypeRaw as PriceType;
+
   let price: number | null = null;
-  if (priceStr) {
+  if (priceType !== "open_to_offers") {
+    if (!priceStr) return { error: "Price is required for this pricing type." };
     price = parseFloat(priceStr);
     if (isNaN(price) || price <= 0) return { error: "Price must be a positive number." };
     if (price > MAX_PRICE) return { error: `Price cannot exceed $${MAX_PRICE.toLocaleString()}.` };
   }
-  if (listingType === "for_sale" && price === null) {
-    return { error: "Price is required for For Sale listings." };
-  }
 
-  // ── Sanitize photo links ────────────────────────────────────────
   let photoLinks: string[] = [];
   if (photoLinksJson) {
     let parsed: unknown;
@@ -148,7 +146,6 @@ export async function createListing(
     photoLinks = links;
   }
 
-  // ── Insert ──────────────────────────────────────────────────────
   const { error: insertError } = await supabase.from("listings").insert({
     user_id: user.id,
     card_id: cardId,
@@ -158,6 +155,7 @@ export async function createListing(
     sealed_condition: sealedCondition,
     grading_company: gradingCompany,
     grade,
+    price_type: priceType,
     price,
     notes,
     photo_links: photoLinks,

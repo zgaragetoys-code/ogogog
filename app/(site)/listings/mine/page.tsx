@@ -113,13 +113,18 @@ function ListingRow({ listing }: { listing: ListingWithCard }) {
       </div>
 
       <div className="text-right shrink-0 space-y-1">
-        <p className="font-semibold text-black">
-          {listing.listing_type === "for_sale"
-            ? listing.price != null
-              ? `$${Number(listing.price).toFixed(2)}`
-              : "Make an offer"
-            : "Wanted"}
-        </p>
+        <div className="flex items-center justify-end gap-1.5">
+          <p className="font-semibold text-black">
+            {listing.price_type === "open_to_offers"
+              ? "Make an offer"
+              : `$${Number(listing.price).toFixed(2)}`}
+          </p>
+          {listing.price_type === "obo" && (
+            <span className="text-xs text-gray-500 border border-gray-300 rounded px-1 py-0.5 leading-none">
+              OBO
+            </span>
+          )}
+        </div>
         <span
           className={`inline-block text-xs px-2 py-0.5 rounded-full ${
             STATUS_STYLES[listing.status] ?? "bg-gray-100 text-gray-500"
