@@ -13,7 +13,30 @@ const inputCls =
 const labelCls = "block text-sm font-medium text-black mb-1";
 const errorCls = "text-red-600 text-xs mt-1";
 
-type Props = { profile: Profile; email: string };
+// External prop — allows null so callers don't need a fallback
+type Props = { profile: Profile | null; email: string };
+// Internal prop — null already resolved to EMPTY_PROFILE before passing to sub-components
+type InternalProps = { profile: Profile; email: string };
+
+const EMPTY_PROFILE: Profile = {
+  id: "",
+  username: null,
+  display_name: null,
+  avatar_seed: null,
+  avatar_style: null,
+  country: null,
+  region: null,
+  notes: null,
+  collectr_url: null,
+  facebook_url: null,
+  instagram_url: null,
+  ebay_username: null,
+  discord_username: null,
+  tcgplayer_url: null,
+  website_url: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
 
 // ── View mode ──────────────────────────────────────────────────────────────
 
@@ -34,7 +57,7 @@ function SocialLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function ProfileView({ profile, email, onEdit }: Props & { onEdit: () => void }) {
+function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () => void }) {
   const seed = profile.avatar_seed ?? profile.id;
   const style = profile.avatar_style ?? "identicon";
   const displayName = profile.display_name ?? profile.username ?? email;
@@ -130,7 +153,7 @@ function CopyButton({ path }: { path: string }) {
 
 // ── Edit mode ──────────────────────────────────────────────────────────────
 
-function ProfileEditForm({ profile, email, onCancel, onSaved }: Props & { onCancel: () => void; onSaved: () => void }) {
+function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & { onCancel: () => void; onSaved: () => void }) {
   const [username, setUsername] = useState(profile.username ?? "");
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(
@@ -407,7 +430,8 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: Props & { onCanc
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export default function ProfileClient({ profile, email }: Props) {
+export default function ProfileClient({ profile: rawProfile, email }: Props) {
+  const profile = rawProfile ?? EMPTY_PROFILE;
   const [mode, setMode] = useState<"view" | "edit">(
     !profile.username ? "edit" : "view"
   );

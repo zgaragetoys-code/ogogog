@@ -28,27 +28,11 @@ export default async function ProfilePage() {
     data = refetch.data;
   }
 
-  // Fallback: if the row still can't be fetched (e.g. migration 005 not yet applied),
-  // render with a minimal stub so the page doesn't crash.
-  const profile: Profile = (data as Profile) ?? {
-    id: user.id,
-    username: null,
-    display_name: null,
-    avatar_seed: user.id,
-    avatar_style: "identicon",
-    country: null,
-    region: null,
-    notes: null,
-    collectr_url: null,
-    facebook_url: null,
-    instagram_url: null,
-    ebay_username: null,
-    discord_username: null,
-    tcgplayer_url: null,
-    website_url: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  return <ProfileClient profile={profile} email={user.email ?? ""} />;
+  // Pass null if still missing — ProfileClient renders safely with EMPTY_PROFILE fallback
+  return (
+    <ProfileClient
+      profile={data as Profile | null}
+      email={user.email ?? ""}
+    />
+  );
 }
