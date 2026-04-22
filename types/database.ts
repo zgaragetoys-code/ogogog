@@ -189,6 +189,19 @@ export const AVATAR_STYLES = [
 ] as const;
 export type AvatarStyle = (typeof AVATAR_STYLES)[number];
 
+export const AVATAR_STYLE_LABELS: Record<AvatarStyle, string> = {
+  "adventurer":  "Adventurer",
+  "avataaars":   "Avataaars",
+  "bottts":      "Bottts",
+  "fun-emoji":   "Fun Emoji",
+  "identicon":   "Identicon",
+  "lorelei":     "Lorelei",
+  "pixel-art":   "Pixel Art",
+  "shapes":      "Shapes",
+  "thumbs":      "Thumbs",
+  "big-smile":   "Big Smile",
+};
+
 // ----------------------------------------------------------------
 // Database row types
 // ----------------------------------------------------------------
