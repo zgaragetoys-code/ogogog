@@ -56,7 +56,7 @@ async function main() {
   }
 
   // 4. Report the target user's profile row
-  const TARGET_EMAIL = "jokey56.sz@gmail.com";
+  const TARGET_EMAIL = "zgarage.toys@gmail.com";
   const targetUser = users.find((u) => u.email === TARGET_EMAIL);
   if (!targetUser) {
     console.log(`\nCould not find user with email ${TARGET_EMAIL}`);

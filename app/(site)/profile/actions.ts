@@ -76,8 +76,8 @@ export async function updateProfile(
     .eq("id", user.id);
 
   if (updateError) {
+    console.error("[updateProfile]", updateError.message, updateError.code);
     if (updateError.code === "23505") return { error: "That username is already taken." };
-    console.error("updateProfile:", updateError.message);
     return { error: "Failed to save profile. Please try again." };
   }
 

@@ -242,3 +242,6 @@ STRIPE_PUBLISHABLE_KEY            — Reserved, not yet used
 ## Developer Context
 Zero prior coding background, comfortable with Linux/terminal.
 Explain commands before running them. Wait for confirmation between major steps.
+
+## Account
+The only user account on this project is **zgarage.toys@gmail.com**. Use this email whenever referencing the test user, backfill targets, or admin access.
