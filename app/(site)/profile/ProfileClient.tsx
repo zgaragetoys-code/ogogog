@@ -80,6 +80,16 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
 
   return (
     <div className="space-y-6">
+      {/* Incomplete profile banner */}
+      {!profile.username && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-amber-800">Set a username to complete your profile.</p>
+          <button onClick={onEdit} className="text-sm font-medium text-amber-900 underline shrink-0">
+            Complete now
+          </button>
+        </div>
+      )}
+
       {/* Avatar + identity */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-start gap-5">
         <img
@@ -457,9 +467,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
 
 export default function ProfileClient({ profile: rawProfile, email }: Props) {
   const profile = rawProfile ?? EMPTY_PROFILE;
-  const [mode, setMode] = useState<"view" | "edit">(
-    !profile.username ? "edit" : "view"
-  );
+  const [mode, setMode] = useState<"view" | "edit">("view");
 
   return (
     <div className="min-h-screen bg-gray-50">
