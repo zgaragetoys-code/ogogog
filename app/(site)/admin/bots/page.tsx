@@ -63,10 +63,7 @@ export default async function AdminBotsPage({
           <div className="flex flex-wrap gap-2">
             <form>
               <button
-                formAction={async () => {
-                  "use server";
-                  await bulkToggleBots("chat_enabled", true);
-                }}
+                formAction={bulkToggleBots.bind(null, "chat_enabled", true, undefined)}
                 className="text-xs px-3 py-1.5 bg-black text-white font-bold hover:bg-zinc-800 transition-colors"
               >
                 Enable All
@@ -74,10 +71,7 @@ export default async function AdminBotsPage({
             </form>
             <form>
               <button
-                formAction={async () => {
-                  "use server";
-                  await bulkToggleBots("chat_enabled", false);
-                }}
+                formAction={bulkToggleBots.bind(null, "chat_enabled", false, undefined)}
                 className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
               >
                 Disable All
@@ -86,10 +80,7 @@ export default async function AdminBotsPage({
             {[50, 100, 150, 200].map((n) => (
               <form key={n}>
                 <button
-                  formAction={async () => {
-                    "use server";
-                    await bulkToggleBots("chat_enabled", true, n);
-                  }}
+                  formAction={bulkToggleBots.bind(null, "chat_enabled", true, n)}
                   className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
                 >
                   Enable {n}
@@ -105,10 +96,7 @@ export default async function AdminBotsPage({
           <div className="flex flex-wrap gap-2">
             <form>
               <button
-                formAction={async () => {
-                  "use server";
-                  await bulkToggleBots("posting_enabled", true);
-                }}
+                formAction={bulkToggleBots.bind(null, "posting_enabled", true, undefined)}
                 className="text-xs px-3 py-1.5 bg-black text-white font-bold hover:bg-zinc-800 transition-colors"
               >
                 Enable All
@@ -116,10 +104,7 @@ export default async function AdminBotsPage({
             </form>
             <form>
               <button
-                formAction={async () => {
-                  "use server";
-                  await bulkToggleBots("posting_enabled", false);
-                }}
+                formAction={bulkToggleBots.bind(null, "posting_enabled", false, undefined)}
                 className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
               >
                 Disable All
@@ -128,10 +113,7 @@ export default async function AdminBotsPage({
             {[50, 100, 150, 200].map((n) => (
               <form key={n}>
                 <button
-                  formAction={async () => {
-                    "use server";
-                    await bulkToggleBots("posting_enabled", true, n);
-                  }}
+                  formAction={bulkToggleBots.bind(null, "posting_enabled", true, n)}
                   className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
                 >
                   Enable {n}
