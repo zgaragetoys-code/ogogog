@@ -161,6 +161,7 @@ export async function createListing(
     photo_links: photoLinks,
     photo_notes: photoNotes,
     status: "active",
+    is_featured: false,
   });
 
   if (insertError) {
