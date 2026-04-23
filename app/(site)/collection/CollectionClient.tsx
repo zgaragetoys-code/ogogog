@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import CardSearch from "@/components/CardSearch";
+import CollectionImport from "./CollectionImport";
 import { addToCollection, removeFromCollection, updateCollectionItem } from "./actions";
 import type { Card } from "@/types/database";
 
@@ -26,6 +28,7 @@ export default function CollectionClient({ initialItems }: Props) {
   const [addQty, setAddQty] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [addKey, setAddKey] = useState(0); // forces CardSearch remount after add
+  const router = useRouter();
 
   function handleAdd() {
     if (!selectedCard) return;
@@ -86,8 +89,15 @@ export default function CollectionClient({ initialItems }: Props) {
 
   const forSaleCount = items.filter(i => i.for_sale).length;
 
+  function handleImported(count: number) {
+    if (count > 0) router.refresh();
+  }
+
   return (
     <div className="space-y-6">
+
+      {/* CSV import */}
+      <CollectionImport onImported={handleImported} />
 
       {/* Add card panel */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
