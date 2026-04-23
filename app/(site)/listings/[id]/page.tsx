@@ -5,6 +5,10 @@ import type { Metadata } from "next";
 
 import { avatarUrl } from "@/lib/avatar";
 import { markAsSold, cancelListing } from "./actions";
+import PhotoGrid from "./PhotoGrid";
+import CardImage from "./CardImage";
+import BookmarkButton from "@/components/BookmarkButton";
+import CopyButton from "@/components/CopyButton";
 import {
   PRODUCT_TYPE_LABELS,
   RAW_CONDITION_LABELS,
@@ -12,8 +16,8 @@ import {
   CUSTOM_CATEGORY_LABELS,
   GENERIC_CONDITION_LABELS,
   type AvatarStyle,
-  type ListingWithCard,
-  type CustomListing,
+  type Listing,
+  type Card,
 } from "@/types/database";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -22,23 +26,18 @@ function isSafeUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function isImageUrl(url: string) {
-  return /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url.split("?")[0]);
-}
+type FullListing = Listing & { card?: Card | null };
 
-function domain(url: string) {
-  try { return new URL(url).hostname.replace(/^www\./, ""); }
-  catch { return url; }
-}
-
-function conditionSummary(listing: ListingWithCard): string {
+function conditionSummary(listing: FullListing): string {
   if (listing.condition_type === "raw" && listing.raw_condition)
     return RAW_CONDITION_LABELS[listing.raw_condition];
   if (listing.condition_type === "graded" && listing.grading_company)
-    return `${listing.grading_company} ${listing.grade}`;
+    return `${listing.grading_company} ${listing.grade ?? "any grade"}`;
   if (listing.condition_type === "sealed" && listing.sealed_condition)
     return SEALED_CONDITION_LABELS[listing.sealed_condition];
-  return "—";
+  if (listing.condition_generic)
+    return GENERIC_CONDITION_LABELS[listing.condition_generic];
+  return "Any condition";
 }
 
 // ── Sub-components (server-safe) ───────────────────────────────────────────
@@ -65,34 +64,59 @@ function PriceBlock({ priceType, price, listingType }: {
 
 function PhotoSection({ urls, notes }: { urls: string[]; notes: string | null }) {
   const safe = urls.filter(isSafeUrl);
-  if (safe.length === 0) return null;
-  const images = safe.filter(isImageUrl);
-  const links = safe.filter((u) => !isImageUrl(u));
+  return <PhotoGrid urls={safe} notes={notes} />;
+}
+
+function ListingDetail({ listing }: { listing: FullListing }) {
+  const isCard = !!listing.card;
+  const name = isCard ? (listing.card?.name ?? "Unknown") : (listing.title ?? "Untitled");
+  const imageUrl = listing.listing_image_url ?? listing.card?.image_url ?? null;
 
   return (
-    <div className="border-2 border-black p-5">
-      <h2 className="text-xs font-black uppercase tracking-widest text-black mb-3">Photos</h2>
-      {images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-          {images.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noopener noreferrer"
-              className="block aspect-square overflow-hidden border-2 border-black hover:opacity-90 transition-opacity">
-              <img src={url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+    <div className="flex gap-5 items-start">
+      <div className="shrink-0">
+        {imageUrl ? (
+          <CardImage src={imageUrl} alt={name} />
+        ) : (
+          <div className="w-28 h-40 bg-gray-200" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0 space-y-2">
+        <h1 className="text-2xl font-black text-black leading-tight">{name}</h1>
+        {isCard ? (
+          <p className="text-sm text-gray-700">
+            {listing.card?.set_name} · #{listing.card?.card_number} · {PRODUCT_TYPE_LABELS[listing.card?.product_type as keyof typeof PRODUCT_TYPE_LABELS]}
+          </p>
+        ) : listing.custom_category ? (
+          <p className="text-sm text-gray-700">{CUSTOM_CATEGORY_LABELS[listing.custom_category]}</p>
+        ) : null}
+        {(listing.set_year || listing.set_series) && (
+          <p className="text-xs text-gray-700">{[listing.set_year, listing.set_series].filter(Boolean).join(" · ")}</p>
+        )}
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-sm text-black">{conditionSummary(listing)}</p>
+          {listing.cert_number && (
+            <a
+              href={
+                listing.grading_company === "PSA"
+                  ? `https://www.psacard.com/cert/${listing.cert_number}`
+                  : listing.grading_company === "CGC"
+                  ? `https://www.cgccards.com/certlookup/${listing.cert_number}/`
+                  : listing.grading_company === "BGS"
+                  ? `https://www.beckett.com/grading/cert/${listing.cert_number}`
+                  : undefined
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-black bg-black text-white px-2 py-0.5 hover:bg-zinc-700 transition-colors"
+              title="Verify cert number"
+            >
+              Cert #{listing.cert_number} ↗
             </a>
-          ))}
+          )}
         </div>
-      )}
-      {links.map((url) => (
-        <a key={url} href={url} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-2 text-sm font-medium text-black hover:underline py-1">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-          {domain(url)} ↗
-        </a>
-      ))}
-      {notes && <p className="text-xs text-gray-500 mt-2">{notes}</p>}
+        <PriceBlock priceType={listing.price_type} price={listing.price} listingType={listing.listing_type} />
+      </div>
     </div>
   );
 }
@@ -102,7 +126,6 @@ function SellerCard({
   isOwner,
   ownerId,
   listingId,
-  isCustom,
   listingStatus,
   currentUserId,
 }: {
@@ -118,7 +141,6 @@ function SellerCard({
   isOwner: boolean;
   ownerId: string;
   listingId: string;
-  isCustom: boolean;
   listingStatus: string;
   currentUserId: string | null;
 }) {
@@ -137,9 +159,9 @@ function SellerCard({
         <img src={avatarUrl(style, seed)} alt={displayName} className="keep-round w-12 h-12 shrink-0" />
         <div className="min-w-0">
           <p className="font-bold text-black truncate">{displayName}</p>
-          {profile?.username && <p className="text-xs text-gray-500">@{profile.username}</p>}
-          {location && <p className="text-xs text-gray-500">{location}</p>}
-          {memberSince && <p className="text-xs text-gray-400">Since {memberSince}</p>}
+          {profile?.username && <p className="text-xs text-gray-700">@{profile.username}</p>}
+          {location && <p className="text-xs text-gray-700">{location}</p>}
+          {memberSince && <p className="text-xs text-gray-700">Since {memberSince}</p>}
         </div>
       </div>
 
@@ -158,13 +180,13 @@ function SellerCard({
             >
               Edit listing
             </Link>
-            <form action={markAsSold.bind(null, listingId, isCustom)}>
+            <form action={markAsSold.bind(null, listingId)}>
               <button type="submit" className="w-full py-2.5 border-2 border-black text-black text-sm font-bold hover:bg-black hover:text-white transition-colors">
                 Mark as sold
               </button>
             </form>
-            <form action={cancelListing.bind(null, listingId, isCustom)}>
-              <button type="submit" className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-black transition-colors">
+            <form action={cancelListing.bind(null, listingId)}>
+              <button type="submit" className="w-full py-2.5 text-xs font-bold text-gray-700 hover:text-black transition-colors">
                 Cancel listing
               </button>
             </form>
@@ -192,15 +214,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: card }, { data: custom }] = await Promise.all([
-    supabase.from("listings").select("listing_type, price, card:cards(name, set_name)").eq("id", id).maybeSingle(),
-    supabase.from("custom_listings").select("title, listing_type, price").eq("id", id).maybeSingle(),
-  ]);
+  const { data } = await supabase
+    .from("listings")
+    .select("listing_type, title, card:cards(name, set_name)")
+    .eq("id", id)
+    .maybeSingle();
 
-  const title = card
-    ? `${(card as unknown as { card: { name: string; set_name: string } }).card.name} — ${card.listing_type === "for_sale" ? "For Sale" : "Wanted"} | ogogog`
-    : custom
-    ? `${custom.title} | ogogog`
+  const l = data as { listing_type: string; title: string | null; card?: { name: string; set_name: string } | null } | null;
+  const title = l?.card?.name
+    ? `${l.card.name} — ${l.listing_type === "for_sale" ? "For Sale" : "Wanted"} | ogogog`
+    : l?.title
+    ? `${l.title} | ogogog`
     : "Listing | ogogog";
 
   return { title };
@@ -217,23 +241,15 @@ export default async function ListingDetailPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [{ data: cardListing }, { data: customListing }] = await Promise.all([
-    supabase
-      .from("listings")
-      .select("*, card:cards(*)")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("custom_listings")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle(),
-  ]);
+  const { data: rawListing } = await supabase
+    .from("listings")
+    .select("*, card:cards(*)")
+    .eq("id", id)
+    .maybeSingle();
 
-  if (!cardListing && !customListing) notFound();
+  if (!rawListing) notFound();
 
-  const isCustom = !cardListing;
-  const listing = (cardListing ?? customListing) as ListingWithCard | CustomListing;
+  const listing = rawListing as unknown as FullListing;
   const ownerId = listing.user_id;
   const isOwner = user?.id === ownerId;
 
@@ -246,12 +262,25 @@ export default async function ListingDetailPage({
   const isSold = listing.status === "sold";
   const isCancelled = listing.status === "cancelled";
 
+  // Check bookmark status for logged-in users
+  let isBookmarked = false;
+  if (user) {
+    const { data: bm } = await supabase
+      .from("bookmarks")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("target_type", "listing")
+      .eq("target_id", id)
+      .maybeSingle();
+    isBookmarked = !!bm;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Back link */}
-        <Link href="/browse" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black mb-5 inline-block">
+        <Link href="/browse" className="text-xs font-bold uppercase tracking-widest text-gray-700 hover:text-black mb-5 inline-block">
           ← Browse
         </Link>
 
@@ -267,11 +296,7 @@ export default async function ListingDetailPage({
           {/* Main column */}
           <div className="lg:col-span-2 space-y-4">
             <div className="border-2 border-black p-5">
-              {isCustom ? (
-                <CustomDetail listing={listing as CustomListing} />
-              ) : (
-                <CardDetail listing={cardListing as ListingWithCard} />
-              )}
+              <ListingDetail listing={listing} />
             </div>
 
             {listing.notes && (
@@ -291,59 +316,33 @@ export default async function ListingDetailPage({
               isOwner={isOwner}
               ownerId={ownerId}
               listingId={id}
-              isCustom={isCustom}
               listingStatus={listing.status}
               currentUserId={user?.id ?? null}
             />
-            <p className="text-xs text-gray-400 text-center">
-              Listed {new Date(listing.created_at).toLocaleDateString("en-US", {
-                month: "short", day: "numeric", year: "numeric",
-              })}
-            </p>
+            {user && !isOwner && (
+              <div className="flex items-center justify-between border-2 border-black px-4 py-3">
+                <span className="text-xs font-bold text-black uppercase tracking-wide">Save listing</span>
+                <BookmarkButton
+                  targetType="listing"
+                  targetId={id}
+                  initialBookmarked={isBookmarked}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs text-gray-700">
+                Listed {new Date(listing.created_at).toLocaleDateString("en-US", {
+                  month: "short", day: "numeric", year: "numeric",
+                })}
+              </p>
+              <CopyButton
+                value={`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://ogogog.com"}/listings/${id}`}
+                label="Share"
+              />
+            </div>
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-function CardDetail({ listing }: { listing: ListingWithCard }) {
-  const { card } = listing;
-  return (
-    <div className="flex gap-5 items-start">
-      <div className="shrink-0">
-        {card.image_url ? (
-          <img src={card.image_url} alt={card.name} referrerPolicy="no-referrer" className="w-28 h-auto" />
-        ) : (
-          <div className="w-28 h-40 bg-gray-200" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0 space-y-2">
-        <h1 className="text-2xl font-black text-black leading-tight">{card.name}</h1>
-        <p className="text-sm text-gray-500">
-          {card.set_name} · #{card.card_number} · {PRODUCT_TYPE_LABELS[card.product_type]}
-        </p>
-        <p className="text-sm text-black">{conditionSummary(listing)}</p>
-        <PriceBlock priceType={listing.price_type} price={listing.price} listingType={listing.listing_type} />
-      </div>
-    </div>
-  );
-}
-
-function CustomDetail({ listing }: { listing: CustomListing }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-2">
-        <h1 className="text-xl font-bold text-black leading-tight flex-1">{listing.title}</h1>
-        <span className="text-xs text-gray-500 border border-gray-200 rounded px-1.5 py-0.5 shrink-0 mt-1">Custom</span>
-      </div>
-      <p className="text-sm text-gray-500">
-        {CUSTOM_CATEGORY_LABELS[listing.custom_category]} · {GENERIC_CONDITION_LABELS[listing.condition_generic]}
-      </p>
-      {listing.description && (
-        <p className="text-sm text-black whitespace-pre-wrap">{listing.description}</p>
-      )}
-      <PriceBlock priceType={listing.price_type} price={listing.price} listingType={listing.listing_type} />
     </div>
   );
 }
