@@ -193,7 +193,7 @@ export default function CollectionClient({ initialItems }: Props) {
               )}
               <div>
                 <p className="font-black text-black">{selectedCard.name}</p>
-                <p className="text-sm text-gray-500">{selectedCard.set_name} · #{selectedCard.card_number}</p>
+                <p className="text-sm text-gray-700">{selectedCard.set_name} · #{selectedCard.card_number}</p>
               </div>
             </div>
 
@@ -297,10 +297,10 @@ export default function CollectionClient({ initialItems }: Props) {
       {/* Stats */}
       {items.length > 0 && (
         <div className="flex items-center gap-5 text-sm">
-          <span><span className="font-black text-black">{items.length}</span> <span className="text-gray-500">unique cards</span></span>
-          <span><span className="font-black text-black">{totalCopies}</span> <span className="text-gray-500">total copies</span></span>
+          <span><span className="font-black text-black">{items.length}</span> <span className="text-gray-700">unique cards</span></span>
+          <span><span className="font-black text-black">{totalCopies}</span> <span className="text-gray-700">total copies</span></span>
           {forSaleCount > 0 && (
-            <span><span className="font-black text-black">{forSaleCount}</span> <span className="text-gray-500">for sale</span></span>
+            <span><span className="font-black text-black">{forSaleCount}</span> <span className="text-gray-700">for sale</span></span>
           )}
         </div>
       )}
@@ -309,7 +309,7 @@ export default function CollectionClient({ initialItems }: Props) {
       {items.length === 0 ? (
         <div className="border-2 border-black p-16 text-center">
           <p className="text-black font-bold mb-1">Your collection is empty</p>
-          <p className="text-sm text-gray-500">Search for a card above to start tracking.</p>
+          <p className="text-sm text-gray-700">Search for a card above to start tracking.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -325,9 +325,9 @@ export default function CollectionClient({ initialItems }: Props) {
 
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-black text-black leading-tight truncate">{item.card.name}</p>
-                  <p className="text-[11px] text-gray-400 truncate">{item.card.set_name} · #{item.card.card_number}</p>
+                  <p className="text-[11px] text-gray-700 truncate">{item.card.set_name} · #{item.card.card_number}</p>
                   {cond && <p className="text-[11px] font-bold text-black mt-0.5">{cond}</p>}
-                  {item.notes && <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.notes}</p>}
+                  {item.notes && <p className="text-[10px] text-gray-700 truncate mt-0.5">{item.notes}</p>}
                 </div>
 
                 {/* Quantity control */}

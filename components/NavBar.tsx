@@ -17,11 +17,13 @@ type NavLinkDef = { label: string; href: string; badge?: number };
 type Props = {
   user: UserInfo | null;
   unreadCount: number;
+  isAdmin?: boolean;
 };
 
 const SHARED_LINKS: NavLinkDef[] = [
   { label: "Featured", href: "/featured" },
   { label: "Browse", href: "/browse" },
+  { label: "Board", href: "/board" },
 ];
 
 const GUEST_ONLY_LINKS: NavLinkDef[] = [{ label: "How it works", href: "/how-it-works" }];
@@ -72,7 +74,7 @@ function NavLink({
       className={`relative flex items-center text-sm font-medium transition-colors pb-0.5 ${
         active
           ? "text-black border-b-2 border-black"
-          : "text-gray-500 hover:text-black"
+          : "text-gray-700 hover:text-black"
       }`}
     >
       {label}{badgeEl}
@@ -80,7 +82,7 @@ function NavLink({
   );
 }
 
-export default function NavBar({ user, unreadCount }: Props) {
+export default function NavBar({ user, unreadCount, isAdmin }: Props) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -102,8 +104,13 @@ export default function NavBar({ user, unreadCount }: Props) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-8">
 
         {/* Logo */}
-        <Link href="/" className="font-black text-black text-xl tracking-tight shrink-0 uppercase">
-          ogogog
+        <Link href="/" className="inline-flex flex-col items-stretch shrink-0">
+          <span className="font-black text-black text-xl tracking-tight uppercase">ogogog</span>
+          <div className="flex justify-between text-[0.4rem] font-black text-black uppercase">
+            {"marketplace".split("").map((char, i) => (
+              <span key={i}>{char}</span>
+            ))}
+          </div>
         </Link>
 
         {/* Desktop nav */}
@@ -138,6 +145,11 @@ export default function NavBar({ user, unreadCount }: Props) {
                     />
                   )}
                   <span className="max-w-[120px] truncate">{displayLabel}</span>
+                  {isAdmin && (
+                    <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 uppercase tracking-widest shrink-0">
+                      ADMIN
+                    </span>
+                  )}
                   <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -162,6 +174,13 @@ export default function NavBar({ user, unreadCount }: Props) {
                         My Collection
                       </Link>
                       <Link
+                        href="/bookmarks"
+                        className="block px-4 py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white transition-colors"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Bookmarks
+                      </Link>
+                      <Link
                         href="/feature-your-listing"
                         className="block px-4 py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white transition-colors"
                         onClick={() => setProfileOpen(false)}
@@ -175,6 +194,18 @@ export default function NavBar({ user, unreadCount }: Props) {
                       >
                         FAQ / How it works
                       </Link>
+                      {isAdmin && (
+                        <>
+                          <div className="my-1 border-t-2 border-black/10" />
+                          <Link
+                            href="/admin/featured"
+                            className="block px-4 py-2.5 text-sm font-black text-red-600 hover:bg-red-600 hover:text-white transition-colors uppercase tracking-wide"
+                            onClick={() => setProfileOpen(false)}
+                          >
+                            ⚡ Admin panel
+                          </Link>
+                        </>
+                      )}
                       <div className="my-1 border-t-2 border-black/10" />
                       <form action={signOut}>
                         <button
@@ -246,8 +277,12 @@ export default function NavBar({ user, unreadCount }: Props) {
               )}
               <Link href="/profile" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Profile</Link>
               <Link href="/collection" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>My Collection</Link>
+              <Link href="/bookmarks" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Bookmarks</Link>
               <Link href="/feature-your-listing" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Feature a listing</Link>
               <Link href="/how-it-works" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>FAQ / How it works</Link>
+              {isAdmin && (
+                <Link href="/admin/featured" className="flex py-2.5 text-sm font-black text-red-600 border-b border-black/10 uppercase tracking-wide" onClick={() => setMenuOpen(false)}>⚡ Admin panel</Link>
+              )}
               <Link
                 href="/listings/new"
                 className="flex w-full text-center justify-center text-sm bg-black text-white font-bold px-4 py-2.5 mt-3 hover:bg-zinc-800 transition-colors"

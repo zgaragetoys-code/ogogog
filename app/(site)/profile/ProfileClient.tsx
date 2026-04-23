@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateProfile } from "./actions";
 import { avatarUrl, randomSeed } from "@/lib/avatar";
@@ -15,9 +16,9 @@ const labelCls = "block text-xs font-black uppercase tracking-widest text-black 
 const errorCls = "text-red-600 text-xs mt-1 font-bold";
 
 // External prop — allows null so callers don't need a fallback
-type Props = { profile: Profile | null; email: string };
+type Props = { profile: Profile | null; email: string; isAdmin?: boolean };
 // Internal prop — null already resolved to EMPTY_PROFILE before passing to sub-components
-type InternalProps = { profile: Profile; email: string };
+type InternalProps = { profile: Profile; email: string; isAdmin?: boolean };
 
 const EMPTY_PROFILE: Profile = {
   id: "",
@@ -35,6 +36,7 @@ const EMPTY_PROFILE: Profile = {
   discord_username: null,
   tcgplayer_url: null,
   website_url: null,
+  global_chat_enabled: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -58,7 +60,7 @@ function SocialLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () => void }) {
+function ProfileView({ profile, email, isAdmin, onEdit }: InternalProps & { onEdit: () => void }) {
   const seed = profile.avatar_seed ?? profile.id;
   const style = profile.avatar_style ?? "identicon";
   const displayName = profile.display_name ?? profile.username ?? email;
@@ -92,23 +94,34 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
       )}
 
       {/* Avatar + identity */}
-      <div className="bg-white border-2 border-black p-6 flex items-start gap-5">
+      <div className={`border-2 p-6 flex items-start gap-5 ${isAdmin ? "bg-red-600 border-red-600" : "bg-white border-black"}`}>
         <img
           src={avatarUrl(style as AvatarStyle, seed)}
           alt={displayName}
           className="keep-round w-20 h-20 shrink-0"
         />
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-black truncate">{displayName}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className={`text-xl font-bold truncate ${isAdmin ? "text-white" : "text-black"}`}>{displayName}</h2>
+            {isAdmin && (
+              <span className="bg-white text-red-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-widest shrink-0">
+                SITE ADMIN
+              </span>
+            )}
+          </div>
           {profile.username && (
-            <p className="text-sm text-gray-500">@{profile.username}</p>
+            <p className={`text-sm ${isAdmin ? "text-red-100" : "text-gray-700"}`}>@{profile.username}</p>
           )}
-          {location && <p className="text-sm text-black mt-1">{location}</p>}
-          <p className="text-xs text-gray-500 mt-1">Member since {memberSince}</p>
+          {location && <p className={`text-sm mt-1 ${isAdmin ? "text-white" : "text-black"}`}>{location}</p>}
+          <p className={`text-xs mt-1 ${isAdmin ? "text-red-100" : "text-gray-700"}`}>Member since {memberSince}</p>
         </div>
         <button
           onClick={onEdit}
-          className="flex items-center gap-1.5 text-sm border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors shrink-0 text-black font-bold"
+          className={`flex items-center gap-1.5 text-sm border-2 px-3 py-1.5 transition-colors shrink-0 font-bold ${
+            isAdmin
+              ? "border-white text-white hover:bg-white hover:text-red-600"
+              : "border-black text-black hover:bg-black hover:text-white"
+          }`}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -118,17 +131,47 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
         </button>
       </div>
 
+      {/* Admin quick-access panel */}
+      {isAdmin && (
+        <div className="bg-red-600 border-2 border-red-600 p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-white uppercase tracking-widest">⚡ Admin panel</p>
+            <p className="text-xs text-red-100 mt-0.5">Feature listings, moderate content, full site control</p>
+          </div>
+          <a
+            href="/admin/featured"
+            className="text-sm bg-white text-red-600 font-black px-4 py-2 hover:bg-red-100 transition-colors shrink-0 uppercase tracking-wide"
+          >
+            Open →
+          </a>
+        </div>
+      )}
+
       {/* My collection link */}
       <div className="bg-white border-2 border-black p-5 flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-black">My collection</p>
-          <p className="text-xs text-gray-500 mt-0.5">Track what you own and mark cards for sale</p>
+          <p className="text-xs text-gray-700 mt-0.5">Track what you own and mark cards for sale</p>
         </div>
         <Link
           href="/collection"
           className="text-sm bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors font-bold shrink-0"
         >
           Manage →
+        </Link>
+      </div>
+
+      {/* Bookmarks link */}
+      <div className="bg-white border-2 border-black p-5 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-black">Bookmarks</p>
+          <p className="text-xs text-gray-700 mt-0.5">Saved listings and collectors</p>
+        </div>
+        <Link
+          href="/bookmarks"
+          className="text-sm bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors font-bold shrink-0"
+        >
+          View →
         </Link>
       </div>
 
@@ -227,6 +270,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
   const [discordUsername, setDiscordUsername] = useState(profile.discord_username ?? "");
   const [tcgplayerUrl, setTcgplayerUrl] = useState(profile.tcgplayer_url ?? "");
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url ?? "");
+  const [globalChatEnabled, setGlobalChatEnabled] = useState(profile.global_chat_enabled);
   const [countrySearch, setCountrySearch] = useState(
     profile.country ? (COUNTRIES.find(c => c.code === profile.country)?.name ?? "") : ""
   );
@@ -266,6 +310,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
     fd.set("discord_username", discordUsername);
     fd.set("tcgplayer_url", tcgplayerUrl);
     fd.set("website_url", websiteUrl);
+    fd.set("global_chat_enabled", globalChatEnabled ? "true" : "false");
 
     const result = await updateProfile(fd);
     if (result?.error) {
@@ -329,7 +374,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
             Username <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center border-2 border-black focus-within:ring-0">
-            <span className="pl-3 text-sm text-gray-400 select-none">@</span>
+            <span className="pl-3 text-sm text-gray-700 select-none">@</span>
             <input
               id="username"
               type="text"
@@ -340,7 +385,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
               className="flex-1 px-2 py-2 text-sm text-black bg-transparent focus:outline-none"
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1">3–30 characters. Letters, numbers, underscore, hyphen.</p>
+          <p className="text-xs text-gray-700 mt-1">3–30 characters. Letters, numbers, underscore, hyphen.</p>
         </div>
 
         <div>
@@ -401,7 +446,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
           <div>
             <label htmlFor="region" className={labelCls}>
               {isUS ? "State" : "State / province / region"}{" "}
-              <span className="text-gray-400 font-normal">(optional)</span>
+              <span className="text-gray-700 font-normal">(optional)</span>
             </label>
             {isUS ? (
               <select
@@ -446,7 +491,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
 
       {/* Social + marketplace links */}
       <div className="bg-white border-2 border-black p-6 space-y-4">
-        <h2 className="text-base font-semibold text-black">Links <span className="font-normal text-sm text-gray-400">(all optional)</span></h2>
+        <h2 className="text-base font-semibold text-black">Links <span className="font-normal text-sm text-gray-700">(all optional)</span></h2>
         {[
           { id: "collectr_url",   label: "Collectr URL",      value: collectrUrl,      set: setCollectrUrl,      ph: "https://collectr.io/yourname" },
           { id: "tcgplayer_url",  label: "TCGplayer URL",     value: tcgplayerUrl,     set: setTcgplayerUrl,     ph: "https://www.tcgplayer.com/store/..." },
@@ -461,6 +506,29 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
             <input id={id} type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={inputCls} />
           </div>
         ))}
+      </div>
+
+      {/* Global chat */}
+      <div className="bg-white border-2 border-black p-6">
+        <h2 className="text-base font-semibold text-black mb-1">Global Chat</h2>
+        <p className="text-xs text-gray-700 mb-4">The community chat shown under the Messages tab.</p>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => setGlobalChatEnabled((v) => !v)}
+            className={`relative w-11 h-6 border-2 border-black transition-colors shrink-0 cursor-pointer ${
+              globalChatEnabled ? "bg-black" : "bg-white"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white border border-black transition-transform ${
+                globalChatEnabled ? "translate-x-5 bg-white" : "translate-x-0 bg-gray-300"
+              }`}
+            />
+          </div>
+          <span className="text-sm font-medium text-black">
+            {globalChatEnabled ? "Enabled — you can send and receive messages" : "Disabled — chat is hidden"}
+          </span>
+        </label>
       </div>
 
       {error && <p className={errorCls + " text-sm text-center"}>{error}</p>}
@@ -487,9 +555,10 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export default function ProfileClient({ profile: rawProfile, email }: Props) {
+export default function ProfileClient({ profile: rawProfile, email, isAdmin }: Props) {
   const profile = rawProfile ?? EMPTY_PROFILE;
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-white">
@@ -502,6 +571,7 @@ export default function ProfileClient({ profile: rawProfile, email }: Props) {
           <ProfileView
             profile={profile}
             email={email}
+            isAdmin={isAdmin}
             onEdit={() => setMode("edit")}
           />
         ) : (
@@ -509,7 +579,7 @@ export default function ProfileClient({ profile: rawProfile, email }: Props) {
             profile={profile}
             email={email}
             onCancel={() => setMode("view")}
-            onSaved={() => setMode("view")}
+            onSaved={() => { setMode("view"); router.refresh(); }}
           />
         )}
       </main>

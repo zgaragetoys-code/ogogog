@@ -11,7 +11,7 @@ export default function HowItWorksPage() {
     <div className="min-h-screen bg-white">
       <main className="max-w-2xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-black text-black uppercase tracking-tight mb-2">How it works</h1>
-        <p className="text-sm text-gray-500 mb-10">
+        <p className="text-sm text-gray-700 mb-10">
           ogogog is a peer-to-peer Pokemon TCG marketplace. No platform fees. No middlemen.
         </p>
 
@@ -58,7 +58,7 @@ export default function HowItWorksPage() {
             </p>
             <div className="mt-4 border-l-4 border-black pl-4">
               <p className="text-xs font-black uppercase tracking-widest text-black mb-1">Stay safe</p>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-gray-700 leading-relaxed">
                 Always use PayPal G&S, never F&F. Ask for tracking. Deal with sellers who have a history on the site.
                 Never send payment before agreeing on all terms.
               </p>

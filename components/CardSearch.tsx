@@ -125,7 +125,7 @@ export default function CardSearch({ onSelect }: CardSearchProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by card name — e.g. Charizard, Pikachu..."
           autoComplete="off"
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-black placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         {isSearching && (
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-black">

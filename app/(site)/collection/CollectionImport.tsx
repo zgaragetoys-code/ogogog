@@ -170,13 +170,13 @@ export default function CollectionImport({ onImported }: Props) {
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <p className="text-sm font-semibold text-black">Import from CSV</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-700 mt-0.5">
               Export your Collectr collection as CSV, then upload it here.
             </p>
           </div>
         </div>
         <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 border-2 border-black text-sm font-bold text-black hover:bg-gray-100 transition-colors">
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
@@ -196,7 +196,7 @@ export default function CollectionImport({ onImported }: Props) {
 
   if (step === "parsing") {
     return (
-      <div className="bg-white border-2 border-black p-5 text-sm text-gray-500">
+      <div className="bg-white border-2 border-black p-5 text-sm text-gray-700">
         Parsing CSV and matching cards…
       </div>
     );
@@ -222,7 +222,7 @@ export default function CollectionImport({ onImported }: Props) {
       <div className="px-5 py-4 border-b-2 border-black flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-black">Review import</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-700 mt-0.5">
             {matched}/{total} cards matched.{unmatched > 0 && ` ${unmatched} not found in database — these will be skipped.`}
           </p>
         </div>
@@ -257,11 +257,11 @@ export default function CollectionImport({ onImported }: Props) {
 
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-black truncate">{row.csvName}</p>
-                {row.csvSet && <p className="text-xs text-gray-400 truncate">{row.csvSet}</p>}
+                {row.csvSet && <p className="text-xs text-gray-700 truncate">{row.csvSet}</p>}
               </div>
 
               <div className="shrink-0 flex items-center gap-2">
-                <span className="text-xs text-gray-500">×{row.quantity}</span>
+                <span className="text-xs text-gray-700">×{row.quantity}</span>
 
                 {row.candidates.length === 0 ? (
                   <span className="text-xs text-red-500">Not found</span>

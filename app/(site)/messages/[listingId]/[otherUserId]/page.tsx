@@ -25,17 +25,16 @@ export default async function ThreadPage({
   if (!otherProfile && user.id !== otherUserId) notFound();
 
   // Fetch listing info
-  const [{ data: cardListing }, { data: customListing }] = await Promise.all([
-    supabase.from("listings").select("id, user_id, card:cards(name, image_url)").eq("id", listingId).maybeSingle(),
-    supabase.from("custom_listings").select("id, user_id, title").eq("id", listingId).maybeSingle(),
-  ]);
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("id, user_id, title, card:cards(name, image_url)")
+    .eq("id", listingId)
+    .maybeSingle();
 
-  const listing = cardListing ?? customListing;
   if (!listing) notFound();
 
-  const listingTitle = cardListing
-    ? (cardListing as unknown as { card: { name: string } }).card.name
-    : (customListing as { title: string }).title;
+  const l = listing as unknown as { id: string; user_id: string; title: string | null; card: { name: string } | null };
+  const listingTitle = l.card?.name ?? l.title ?? "Listing";
 
   // Fetch thread messages
   const { data: messages } = await supabase

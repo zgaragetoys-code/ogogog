@@ -3,14 +3,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function markAsSold(listingId: string, isCustom: boolean) {
+export async function markAsSold(listingId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const table = isCustom ? "custom_listings" : "listings";
   const { error } = await supabase
-    .from(table)
+    .from("listings")
     .update({ status: "sold" })
     .eq("id", listingId)
     .eq("user_id", user.id);
@@ -23,14 +22,13 @@ export async function markAsSold(listingId: string, isCustom: boolean) {
   redirect(`/listings/mine`);
 }
 
-export async function cancelListing(listingId: string, isCustom: boolean) {
+export async function cancelListing(listingId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const table = isCustom ? "custom_listings" : "listings";
   const { error } = await supabase
-    .from(table)
+    .from("listings")
     .update({ status: "cancelled" })
     .eq("id", listingId)
     .eq("user_id", user.id);

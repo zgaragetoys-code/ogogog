@@ -1,11 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import ListingCard, { type FeedItem } from "@/app/(site)/browse/ListingCard";
-
-const CARD_SELECT =
-  "id, listing_type, condition_type, raw_condition, sealed_condition, " +
-  "grading_company, grade, price_type, price, is_featured, created_at, " +
-  "card:cards(name, set_name, card_number, image_url, product_type)";
+import ListingCard, { type FeedListing } from "@/app/(site)/browse/ListingCard";
 
 export default async function FeaturedPage() {
   const supabase = await createClient();
@@ -13,15 +8,18 @@ export default async function FeaturedPage() {
 
   const { data: featuredListings } = await supabase
     .from("listings")
-    .select(CARD_SELECT)
+    .select(
+      "id, listing_type, condition_type, raw_condition, sealed_condition, " +
+      "grading_company, grade, price_type, price, is_featured, created_at, " +
+      "set_year, set_series, title, custom_category, listing_image_url, " +
+      "condition_generic, card:cards!card_id(name, set_name, card_number, image_url, product_type, release_date)"
+    )
     .eq("status", "active")
     .eq("is_featured", true)
     .or(`featured_until.is.null,featured_until.gt.${now}`)
     .order("created_at", { ascending: false });
 
-  const items: FeedItem[] = ((featuredListings ?? []) as unknown[]).map(
-    (r) => ({ kind: "card", data: r } as FeedItem)
-  );
+  const items = ((featuredListings ?? []) as unknown as FeedListing[]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -31,7 +29,7 @@ export default async function FeaturedPage() {
             <h1 className="text-2xl font-black text-black uppercase tracking-tight flex items-center gap-2">
               <span className="text-yellow-400">✦</span> Featured
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-700 mt-0.5">
               Highlighted listings.{" "}
               <Link href="/feature-your-listing" className="font-bold text-black hover:underline">
                 Feature yours →
@@ -43,7 +41,7 @@ export default async function FeaturedPage() {
         {items.length === 0 ? (
           <div className="border-2 border-black p-16 text-center">
             <p className="text-black font-bold mb-1">No featured listings right now</p>
-            <p className="text-sm text-gray-500 mb-6">Be the first to get your listing seen by more collectors.</p>
+            <p className="text-sm text-gray-700 mb-6">Be the first to get your listing seen by more collectors.</p>
             <Link href="/feature-your-listing" className="inline-block text-sm bg-black text-white px-5 py-2.5 font-bold hover:bg-zinc-800 transition-colors">
               Feature your listing
             </Link>
@@ -51,7 +49,7 @@ export default async function FeaturedPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {items.map((item) => (
-              <ListingCard key={item.data.id} item={item} />
+              <ListingCard key={item.id} item={item} />
             ))}
           </div>
         )}

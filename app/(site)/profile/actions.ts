@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { AVATAR_STYLES, type AvatarStyle } from "@/types/database";
+import { checkProfanity } from "@/lib/moderation";
 
 const USERNAME_RE = /^[a-zA-Z0-9_-]{3,30}$/;
 
@@ -29,6 +30,7 @@ export async function updateProfile(
   const discordUsername = (formData.get("discord_username") as string | null)?.trim() || null;
   const tcgplayerUrl = (formData.get("tcgplayer_url") as string | null)?.trim() || null;
   const websiteUrl = (formData.get("website_url") as string | null)?.trim() || null;
+  const globalChatEnabled = formData.get("global_chat_enabled") !== "false";
 
   if (!username) return { error: "Username is required." };
   if (!USERNAME_RE.test(username)) {
@@ -40,11 +42,34 @@ export async function updateProfile(
   if (!country) return { error: "Country is required." };
   if (country.length !== 2) return { error: "Invalid country code." };
   if (notes && notes.length > 2000) return { error: "Notes must be 2000 characters or fewer." };
+  if (notes) {
+    const bioMod = checkProfanity(notes);
+    if (!bioMod.ok) return { error: bioMod.reason };
+  }
+  if (displayName) {
+    const dnMod = checkProfanity(displayName);
+    if (!dnMod.ok) return { error: dnMod.reason };
+  }
 
   if (!avatarStyleRaw || !AVATAR_STYLES.includes(avatarStyleRaw as AvatarStyle)) {
     return { error: "Invalid avatar style." };
   }
   const avatarStyle = avatarStyleRaw as AvatarStyle;
+
+  // Validate all URL fields — must be http/https or empty
+  const urlFields: [string | null, string][] = [
+    [collectrUrl, "Collectr URL"],
+    [facebookUrl, "Facebook URL"],
+    [instagramUrl, "Instagram URL"],
+    [tcgplayerUrl, "TCGplayer URL"],
+    [websiteUrl, "Website URL"],
+  ];
+  for (const [url, label] of urlFields) {
+    if (!url) continue;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      return { error: `${label} must start with http:// or https://` };
+    }
+  }
 
   // Check username uniqueness (excluding this user)
   const { data: existing } = await supabase
@@ -72,6 +97,7 @@ export async function updateProfile(
       discord_username: discordUsername,
       tcgplayer_url: tcgplayerUrl,
       website_url: websiteUrl,
+      global_chat_enabled: globalChatEnabled,
     })
     .eq("id", user.id);
 

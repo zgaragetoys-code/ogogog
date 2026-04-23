@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as "signup" | "magiclink" | null;
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/featured";
 
   const cookieStore = await cookies();
 

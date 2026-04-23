@@ -20,7 +20,7 @@ export default async function CollectionPage() {
         <div className="flex items-center justify-between mb-6 border-b-2 border-black pb-4">
           <div>
             <h1 className="text-2xl font-black text-black uppercase tracking-tight">My collection</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-700 mt-0.5">
               Track what you own and mark cards for sale.
             </p>
           </div>

@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { avatarUrl } from "@/lib/avatar";
 import type { AvatarStyle } from "@/types/database";
+import NewConversation from "./NewConversation";
 
 type Message = {
   id: string;
-  listing_id: string;
+  listing_id: string | null;
   sender_id: string;
   receiver_id: string;
   content: string;
@@ -15,10 +16,13 @@ type Message = {
 };
 
 type Thread = {
-  listingId: string;
+  key: string;
+  href: string;
+  listingId: string | null;
   otherUserId: string;
   lastMessage: Message;
   unreadCount: number;
+  isDirect: boolean;
 };
 
 function timeAgo(iso: string): string {
@@ -36,18 +40,44 @@ export default async function MessagesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/messages");
 
-  const { data: allMessages } = await supabase
-    .from("messages")
-    .select("*")
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-    .order("created_at", { ascending: false });
+  const [
+    { data: allMessages },
+    { data: listingsForSearch },
+    { data: allProfiles },
+  ] = await Promise.all([
+    supabase
+      .from("messages")
+      .select("*")
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("listings")
+      .select("id, user_id, listing_type, price, title, card:cards!card_id(name)")
+      .eq("status", "active")
+      .neq("user_id", user.id),
+    supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_seed, avatar_style"),
+  ]);
 
+  // Build thread map
   const threadMap = new Map<string, Thread>();
   for (const msg of (allMessages ?? []) as Message[]) {
     const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-    const key = `${msg.listing_id}__${otherUserId}`;
+    const isDirect = msg.listing_id === null;
+    const key = isDirect ? `direct__${otherUserId}` : `${msg.listing_id}__${otherUserId}`;
+    const href = isDirect ? `/messages/direct/${otherUserId}` : `/messages/${msg.listing_id}/${otherUserId}`;
+
     if (!threadMap.has(key)) {
-      threadMap.set(key, { listingId: msg.listing_id, otherUserId, lastMessage: msg, unreadCount: 0 });
+      threadMap.set(key, {
+        key,
+        href,
+        listingId: msg.listing_id,
+        otherUserId,
+        lastMessage: msg,
+        unreadCount: 0,
+        isDirect,
+      });
     }
     if (msg.receiver_id === user.id && !msg.read_at) {
       threadMap.get(key)!.unreadCount++;
@@ -56,79 +86,117 @@ export default async function MessagesPage() {
 
   const threads = [...threadMap.values()];
 
-  if (threads.length === 0) {
-    return (
-      <div className="min-h-screen bg-white">
-        <main className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-black text-black uppercase tracking-tight mb-6 border-b-2 border-black pb-4">Messages</h1>
-          <div className="border-2 border-black p-12 text-center">
-            <p className="text-black font-bold mb-1">No messages yet</p>
-            <p className="text-sm text-gray-500">When you contact a seller, conversations appear here.</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  const listingIds = [...new Set(threads.map(t => t.listingId))];
-  const [{ data: cardListings }, { data: customListings }] = await Promise.all([
-    supabase.from("listings").select("id, card:cards(name, image_url)").in("id", listingIds),
-    supabase.from("custom_listings").select("id, title").in("id", listingIds),
-  ]);
-
+  // Resolve listing titles for non-direct threads
+  const listingIds = [...new Set(threads.filter(t => !t.isDirect && t.listingId).map(t => t.listingId as string))];
   const listingMap = new Map<string, { title: string }>();
-  for (const l of (cardListings ?? []) as unknown as { id: string; card: { name: string } }[]) {
-    listingMap.set(l.id, { title: l.card.name });
-  }
-  for (const l of (customListings ?? []) as { id: string; title: string }[]) {
-    listingMap.set(l.id, { title: l.title });
+  if (listingIds.length > 0) {
+    const { data: tl } = await supabase
+      .from("listings")
+      .select("id, title, card:cards(name)")
+      .in("id", listingIds);
+    for (const l of (tl ?? []) as unknown as { id: string; title: string | null; card: { name: string } | null }[]) {
+      listingMap.set(l.id, { title: l.card?.name ?? l.title ?? "Listing" });
+    }
   }
 
-  const otherUserIds = [...new Set(threads.map(t => t.otherUserId))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, username, display_name, avatar_seed, avatar_style")
-    .in("id", otherUserIds);
-
-  const profileMap = new Map(
-    (profiles ?? []).map((p: { id: string; username: string | null; display_name: string | null; avatar_seed: string | null; avatar_style: string | null }) => [p.id, p])
+  type ProfileRow = { id: string; username: string | null; display_name: string | null; avatar_seed: string | null; avatar_style: AvatarStyle | null };
+  const profileMap = new Map<string, ProfileRow>(
+    ((allProfiles ?? []) as ProfileRow[]).map(p => [p.id, p])
   );
+
+  // Build searchable users for NewConversation
+  type ListingSearchRow = { id: string; user_id: string; listing_type: string; price: number | null; title: string | null; card: { name: string } | null };
+
+  const listingsByOtherUser = new Map<string, { id: string; title: string; listing_type: string; price: number | null; status: string }[]>();
+  for (const l of (listingsForSearch ?? []) as unknown as ListingSearchRow[]) {
+    const arr = listingsByOtherUser.get(l.user_id) ?? [];
+    arr.push({ id: l.id, title: l.card?.name ?? l.title ?? "(untitled)", listing_type: l.listing_type, price: l.price, status: "active" });
+    listingsByOtherUser.set(l.user_id, arr);
+  }
+
+  const searchableUsers = ((allProfiles ?? []) as ProfileRow[])
+    .filter(p => p.id !== user.id && (p.username || p.display_name))
+    .map(p => ({
+      id: p.id,
+      username: p.username,
+      display_name: p.display_name,
+      avatar_seed: p.avatar_seed,
+      avatar_style: (p.avatar_style ?? "identicon") as AvatarStyle,
+      listings: listingsByOtherUser.get(p.id) ?? [],
+    }));
 
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-black text-black uppercase tracking-tight mb-6 border-b-2 border-black pb-4">Messages</h1>
-        <div className="divide-y-2 divide-black border-t-2 border-b-2 border-black">
-          {threads.map((thread) => {
-            const listing = listingMap.get(thread.listingId);
-            const profile = profileMap.get(thread.otherUserId);
-            const name = profile?.display_name ?? profile?.username ?? "User";
-            const seed = profile?.avatar_seed ?? thread.otherUserId;
-            const style = (profile?.avatar_style ?? "identicon") as AvatarStyle;
-            return (
-              <Link
-                key={`${thread.listingId}_${thread.otherUserId}`}
-                href={`/messages/${thread.listingId}/${thread.otherUserId}`}
-                className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
-              >
-                <img src={avatarUrl(style, seed)} alt={name} className="keep-round w-10 h-10 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-black truncate">{name}</p>
-                    {thread.unreadCount > 0 && (
-                      <span className="keep-round bg-black text-white text-xs font-black px-1.5 py-0.5 shrink-0">
-                        {thread.unreadCount}
-                      </span>
-                    )}
+
+        {/* Global chat — community channel, separate from private threads */}
+        <Link
+          href="/chat"
+          className="flex items-center gap-4 p-4 mb-8 bg-indigo-50 border-2 border-indigo-300 hover:bg-indigo-100 transition-colors group"
+        >
+          <div className="w-10 h-10 bg-indigo-200 border-2 border-indigo-300 flex items-center justify-center shrink-0 text-lg">
+            💬
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-indigo-900">Global Chat</p>
+            <p className="text-xs text-indigo-600 mt-0.5">Community channel — everyone is here</p>
+          </div>
+          <svg
+            className="w-4 h-4 text-indigo-400 group-hover:text-indigo-700 transition-colors shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <NewConversation users={searchableUsers} />
+
+        {threads.length === 0 ? (
+          <div className="border-2 border-black p-12 text-center">
+            <p className="text-black font-bold mb-1">No messages yet</p>
+            <p className="text-sm text-gray-700">Use the search above to start a conversation.</p>
+          </div>
+        ) : (
+          <div className="divide-y-2 divide-black border-t-2 border-b-2 border-black">
+            {threads.map((thread) => {
+              const profile = profileMap.get(thread.otherUserId);
+              const name = profile?.display_name ?? profile?.username ?? "User";
+              const seed = profile?.avatar_seed ?? thread.otherUserId;
+              const style = (profile?.avatar_style ?? "identicon") as AvatarStyle;
+              const subtitle = thread.isDirect
+                ? "General chat"
+                : (listingMap.get(thread.listingId!)?.title ?? "Listing");
+              return (
+                <Link
+                  key={thread.key}
+                  href={thread.href}
+                  className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <img src={avatarUrl(style, seed)} alt={name} className="keep-round w-10 h-10 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-black truncate">{name}</p>
+                      {thread.isDirect && (
+                        <span className="text-[10px] font-black border border-black px-1.5 py-0.5 uppercase shrink-0">Chat</span>
+                      )}
+                      {thread.unreadCount > 0 && (
+                        <span className="keep-round bg-black text-white text-xs font-black px-1.5 py-0.5 shrink-0">
+                          {thread.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-gray-700 truncate">{subtitle}</p>
+                    <p className="text-xs text-gray-700 truncate mt-0.5">{thread.lastMessage.content}</p>
                   </div>
-                  {listing && <p className="text-xs font-medium text-gray-500 truncate">{listing.title}</p>}
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{thread.lastMessage.content}</p>
-                </div>
-                <span className="text-xs font-bold text-gray-400 shrink-0">{timeAgo(thread.lastMessage.created_at)}</span>
-              </Link>
-            );
-          })}
-        </div>
+                  <span className="text-xs font-bold text-gray-700 shrink-0">{timeAgo(thread.lastMessage.created_at)}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -28,11 +28,13 @@ export default async function ProfilePage() {
     data = refetch.data;
   }
 
-  // Pass null if still missing — ProfileClient renders safely with EMPTY_PROFILE fallback
+  const isAdmin = user.email === process.env.ADMIN_EMAIL;
+
   return (
     <ProfileClient
       profile={data as Profile | null}
       email={user.email ?? ""}
+      isAdmin={isAdmin}
     />
   );
 }

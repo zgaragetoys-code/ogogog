@@ -27,6 +27,8 @@ export default async function NavBarServer() {
   const seed = profile?.avatar_seed ?? user.id;
   const style = (profile?.avatar_style ?? "identicon") as AvatarStyle;
 
+  const isAdmin = user.email === process.env.ADMIN_EMAIL;
+
   return (
     <NavBar
       user={{
@@ -36,6 +38,7 @@ export default async function NavBarServer() {
         avatarUrl: avatarUrl(style, seed),
       }}
       unreadCount={unreadCount ?? 0}
+      isAdmin={isAdmin}
     />
   );
 }

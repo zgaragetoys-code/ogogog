@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "./actions";
 
@@ -38,7 +38,7 @@ export default function ThreadClient({
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const channel = supabase
@@ -70,7 +70,15 @@ export default function ThreadClient({
     setError("");
     startTransition(async () => {
       const result = await sendMessage(listingId, otherUserId, content);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      if (result?.message) {
+        setMessages((prev) =>
+          prev.find((m) => m.id === result.message!.id) ? prev : [...prev, result.message!]
+        );
+      }
     });
   }
 
@@ -79,7 +87,7 @@ export default function ThreadClient({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
         {messages.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">No messages yet. Say hello!</p>
+          <p className="text-center text-sm text-gray-700 py-8">No messages yet. Say hello!</p>
         )}
         {messages.map((msg) => {
           const isMe = msg.sender_id === currentUserId;
@@ -95,7 +103,7 @@ export default function ThreadClient({
                 >
                   {msg.content}
                 </div>
-                <p className="text-xs text-gray-400 px-1">{timeLabel(msg.created_at)}</p>
+                <p className="text-xs text-gray-700 px-1">{timeLabel(msg.created_at)}</p>
               </div>
             </div>
           );
@@ -126,7 +134,7 @@ export default function ThreadClient({
             Send
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-1">Enter to send · Shift+Enter for new line</p>
+        <p className="text-xs text-gray-700 mt-1">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   );

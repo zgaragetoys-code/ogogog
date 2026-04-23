@@ -1,9 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import EditCardListingClient from "./EditCardListingClient";
-import EditCustomListingClient from "./EditCustomListingClient";
-import type { ListingWithCard, CustomListing } from "@/types/database";
+import EditListingClient from "./EditListingClient";
+import type { Listing, Card } from "@/types/database";
 
 export default async function EditListingPage({
   params,
@@ -15,14 +14,16 @@ export default async function EditListingPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/auth/login?next=/listings/${id}/edit`);
 
-  const [{ data: cardListing }, { data: customListing }] = await Promise.all([
-    supabase.from("listings").select("*, card:cards(*)").eq("id", id).eq("user_id", user.id).maybeSingle(),
-    supabase.from("custom_listings").select("*").eq("id", id).eq("user_id", user.id).maybeSingle(),
-  ]);
+  const { data: rawListing } = await supabase
+    .from("listings")
+    .select("*, card:cards(*)")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (!cardListing && !customListing) notFound();
+  if (!rawListing) notFound();
 
-  const isCustom = !cardListing;
+  const listing = rawListing as unknown as Listing & { card?: Card | null };
 
   return (
     <div className="min-h-screen bg-white">
@@ -34,17 +35,7 @@ export default async function EditListingPage({
           </Link>
         </div>
 
-        {isCustom ? (
-          <EditCustomListingClient
-            listingId={id}
-            listing={customListing as unknown as CustomListing}
-          />
-        ) : (
-          <EditCardListingClient
-            listingId={id}
-            listing={cardListing as unknown as ListingWithCard}
-          />
-        )}
+        <EditListingClient listingId={id} listing={listing} />
       </main>
     </div>
   );

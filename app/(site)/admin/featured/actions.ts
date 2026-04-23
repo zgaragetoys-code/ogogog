@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
@@ -12,16 +12,32 @@ async function assertAdmin() {
   return supabase;
 }
 
+export async function cancelAnyListing(listingId: string) {
+  await assertAdmin();
+  const admin = createAdminClient();
+  await admin.from("listings").update({ status: "cancelled" }).eq("id", listingId);
+  revalidatePath("/admin/featured");
+  revalidatePath("/browse");
+  revalidatePath("/featured");
+}
+
+export async function deleteAnyListing(listingId: string) {
+  await assertAdmin();
+  const admin = createAdminClient();
+  await admin.from("listings").delete().eq("id", listingId);
+  revalidatePath("/admin/featured");
+  revalidatePath("/browse");
+  revalidatePath("/featured");
+}
+
 export async function toggleFeatured(
   listingId: string,
-  isCustom: boolean,
   featured: boolean,
   featuredUntil: string | null
 ) {
   const supabase = await assertAdmin();
-  const table = isCustom ? "custom_listings" : "listings";
   await supabase
-    .from(table)
+    .from("listings")
     .update({
       is_featured: featured,
       featured_until: featured && featuredUntil ? new Date(featuredUntil).toISOString() : null,

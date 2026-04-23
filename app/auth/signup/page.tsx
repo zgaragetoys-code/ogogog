@@ -8,23 +8,32 @@ export default async function SignupPage({
   const { error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Pokemon TCG Marketplace</h1>
+          <div className="inline-flex flex-col items-stretch">
+            <a href="/" className="font-black text-black text-4xl tracking-tight uppercase">
+              ogogog
+            </a>
+            <div className="flex justify-between text-[0.55rem] font-black text-black uppercase">
+              {"marketplace".split("").map((char, i) => (
+                <span key={i}>{char}</span>
+              ))}
+            </div>
+          </div>
           <p className="text-black mt-2 text-sm">Create your free account</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white border-2 border-black p-8">
           {error && (
-            <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-5 px-4 py-3 border-2 border-black bg-black text-white text-sm font-bold">
               {error}
             </div>
           )}
 
           <form action={signUp} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-xs font-black uppercase tracking-widest text-black mb-1">
                 Email
               </label>
               <input
@@ -33,11 +42,11 @@ export default async function SignupPage({
                 name="email"
                 required
                 autoComplete="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border-2 border-black text-sm text-black focus:outline-none focus:ring-0"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-xs font-black uppercase tracking-widest text-black mb-1">
                 Password
               </label>
               <input
@@ -47,21 +56,21 @@ export default async function SignupPage({
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border-2 border-black text-sm text-black focus:outline-none focus:ring-0"
               />
               <p className="text-xs text-black mt-1">Minimum 8 characters</p>
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="w-full py-2.5 bg-black text-white text-sm font-bold hover:bg-zinc-800 transition-colors"
             >
               Create account
             </button>
           </form>
 
-          <p className="mt-5 pt-5 border-t border-gray-100 text-center text-sm text-black">
+          <p className="mt-5 pt-5 border-t-2 border-black text-center text-sm text-black">
             Already have an account?{" "}
-            <a href="/auth/login" className="text-blue-600 hover:underline font-medium">
+            <a href="/auth/login" className="font-bold text-black hover:underline">
               Sign in
             </a>
           </p>
