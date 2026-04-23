@@ -7,7 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:tcgdex": "tsx scripts/import-tcgdex.ts"
+    "import:tcgdex": "tsx scripts/import-tcgdex.ts",
+    "enrich:images": "tsx scripts/enrich-images.ts",
+    "seed:testuser": "tsx scripts/seed-test-user.ts",
+    "seed:community": "tsx scripts/seed-community.ts",
+    "seed:chat": "tsx scripts/seed-chat.ts",
+    "seed:chat2": "tsx scripts/seed-chat-2.ts",
+    "rework:profiles": "tsx scripts/rework-profiles.ts",
+    "seed:bots": "tsx scripts/seed-bots.ts",
+    "seed:board": "tsx scripts/seed-board.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

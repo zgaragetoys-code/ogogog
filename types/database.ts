@@ -58,6 +58,7 @@ export const LISTING_STATUSES = [
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export const CUSTOM_CATEGORIES = [
+  "sealed_product",
   "custom_card",
   "accessories",
   "storage",
@@ -70,14 +71,15 @@ export const CUSTOM_CATEGORIES = [
 export type CustomCategory = (typeof CUSTOM_CATEGORIES)[number];
 
 export const CUSTOM_CATEGORY_LABELS: Record<CustomCategory, string> = {
-  custom_card:   "Custom Card",
-  accessories:   "Accessories",
-  storage:       "Storage",
-  slab_case:     "Slab / Case",
-  loose_cards:   "Loose Cards",
-  damaged_cards: "Damaged Cards",
-  miscellaneous: "Miscellaneous",
-  other:         "Other",
+  sealed_product: "Sealed Product",
+  custom_card:    "Custom Card",
+  accessories:    "Accessories",
+  storage:        "Storage",
+  slab_case:      "Slab / Case",
+  loose_cards:    "Loose Cards",
+  damaged_cards:  "Damaged Cards",
+  miscellaneous:  "Miscellaneous",
+  other:          "Other",
 };
 
 export const GENERIC_CONDITIONS = ["new", "like_new", "used", "damaged"] as const;
@@ -222,6 +224,7 @@ export interface Profile {
   discord_username: string | null;
   tcgplayer_url: string | null;
   website_url: string | null;
+  global_chat_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -243,16 +246,31 @@ export interface Card {
 export interface Listing {
   id: string;
   user_id: string;
-  card_id: string;
+  // Catalog-linked (null for custom items)
+  card_id: string | null;
+  card?: Card | null;
+  // Custom item fields (null for catalog-linked)
+  title: string | null;
+  custom_category: CustomCategory | null;
+  condition_generic: GenericCondition | null;
+  listing_image_url: string | null;
+  // Set metadata (applies to both)
+  set_year: number | null;
+  set_series: string | null;
+  // Listing metadata
   listing_type: ListingType;
   status: ListingStatus;
+  // Condition (used for catalog items)
   condition_type: ConditionType | null;
   raw_condition: RawCondition | null;
   sealed_condition: SealedCondition | null;
   grading_company: GradingCompany | null;
   grade: number | null;
+  cert_number: string | null;
+  // Price
   price_type: PriceType;
   price: number | null;
+  // Details
   notes: string | null;
   photo_links: string[];
   photo_notes: string | null;
@@ -264,27 +282,7 @@ export interface Listing {
   updated_at: string;
 }
 
-// Listing row joined with its card — used on feed and profile pages
+// Listing row joined with its card — kept for backwards compat in detail page
 export interface ListingWithCard extends Listing {
   card: Card;
-}
-
-export interface CustomListing {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  custom_category: CustomCategory;
-  condition_generic: GenericCondition;
-  listing_type: ListingType;
-  price_type: PriceType;
-  price: number | null;
-  notes: string | null;
-  photo_links: string[];
-  photo_notes: string | null;
-  is_featured: boolean;
-  featured_until: string | null;
-  status: ListingStatus;
-  created_at: string;
-  updated_at: string;
 }

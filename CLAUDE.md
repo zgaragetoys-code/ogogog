@@ -108,10 +108,15 @@ No separate `sets` table. Set info is denormalized onto each card row.
 
 ### `profiles` table (auto-created on signup via trigger)
 ```
-id              uuid PK → auth.users
-username        text UNIQUE
-avatar_url, bio text
-seller/buyer _rating_total/_count  integer (running totals for averages)
+id                   uuid PK → auth.users
+username             text UNIQUE
+display_name         text
+avatar_seed          text
+avatar_style         text
+country, region      text
+notes                text
+collectr_url, etc.   text   -- social/marketplace links
+global_chat_enabled  boolean DEFAULT true   -- added in migration 013
 created_at, updated_at
 ```
 
@@ -156,6 +161,30 @@ read_at      timestamptz   -- null = unread
 
 RLS: only sender and receiver can read/write their messages.
 
+### `global_chat_messages` table (migration 013)
+```
+id         uuid PK
+user_id    uuid → auth.users
+content    text CHECK 1–280 chars
+created_at timestamptz
+deleted_at timestamptz   -- null = visible (soft delete)
+deleted_by uuid → auth.users
+```
+RLS: anyone reads non-deleted; authenticated can insert (user_id = auth.uid()); owner can update (soft-delete).
+Realtime enabled on INSERT. 10-second cooldown enforced server-side in chat/actions.ts.
+Profanity filter: `lib/moderation.ts` — normalises leetspeak substitutions then checks against BLOCKED word list.
+
+### `bookmarks` table (migration 014)
+```
+id          uuid PK
+user_id     uuid → auth.users
+target_type text CHECK IN ('listing', 'user')
+target_id   text          -- listing UUID or user UUID
+created_at  timestamptz
+UNIQUE (user_id, target_type, target_id)
+```
+RLS: authenticated users manage own rows only. `toggleBookmark()` server action in app/bookmarks/actions.ts.
+
 ---
 
 ## Photo Links (listings)
@@ -195,21 +224,43 @@ RLS: only sender and receiver can read/write their messages.
 |------|--------|
 | Project setup (Node, git, Next.js) | ✅ Done |
 | Supabase client wired up | ✅ Done |
-| Auth (signup, login, magic link, signout) | ✅ Done — tested in browser |
-| Database schema (001_initial_schema.sql) | ✅ Done — run in Supabase |
-| Featured listing columns (002_add_featured.sql) | ⚠️ Written — needs to be run in Supabase |
-| TCGdex card catalog import | ✅ Done — 23,159 cards |
+| Auth (signup, login, magic link, signout) | ✅ Done |
+| Database schema (migrations 001–012) | ✅ Done — all run in Supabase |
+| Migration 013 — global chat table | ✅ Done — run in Supabase SQL Editor |
+| Migration 014 — bookmarks table | ✅ Done — run in Supabase SQL Editor |
+| TCGdex card catalog import | ✅ Done — 23,160 cards (`npm run import:tcgdex`) |
+| pokemontcg.io image enrichment | ✅ Done — fills null image_url cards (`npm run enrich:images`) |
 | TypeScript database types | ✅ Done — types/database.ts |
 | Card search component | ✅ Done — components/CardSearch.tsx |
-| Listing creation form (client) | ✅ Done — app/listings/new/NewListingClient.tsx |
-| Listing creation server action + page | 🔄 Next up |
-| /listings/mine stub page | 🔄 Next up (commit 4) |
-| Public feed | ❌ Not started |
-| Listing detail pages | ❌ Not started |
-| User profiles | ❌ Not started |
-| Messaging | ❌ Not started |
-| /featured + /feature-your-listing | ❌ Not started |
-| /admin/featured | ❌ Not started |
+| Listing creation — catalog items | ✅ Done — app/listings/new/ |
+| Listing creation — custom items (unified) | ✅ Done — same form, mode toggle |
+| /listings/mine | ✅ Done |
+| Edit/cancel listings | ✅ Done — app/listings/[id]/edit/ |
+| Mark as sold | ✅ Done |
+| Public browse feed (real-time) | ✅ Done — app/browse/ |
+| Listing detail pages | ✅ Done — app/listings/[id]/ |
+| User profiles | ✅ Done — app/u/[username]/ |
+| Messaging (per-listing threads) | ✅ Done — app/messages/ |
+| /featured + /feature-your-listing | ✅ Done |
+| /admin/featured | ✅ Done |
+| /admin/users | ✅ Done |
+| Collection items | ✅ Done — app/collection/ |
+| Community seed users | ✅ Done — `npm run seed:community` |
+| Global chat | ✅ Done — app/chat/, realtime, moderation, cooldown |
+| Bookmarks (listings + users) | ✅ Done — app/bookmarks/, components/BookmarkButton.tsx |
+| Inline bookmark on browse cards | ✅ Done — hover to reveal, no navigation needed |
+| Chat in Messages tab | ✅ Done — indigo banner at top of /messages |
+| Global chat toggle in profile | ✅ Done — edit profile → Global Chat section |
+| Bot system (migration 015) | ⚠️ Migration SQL written — user must run in Supabase SQL Editor |
+| 1000 bot accounts | ⚠️ Script ready — run `npm run seed:bots` AFTER migration 015 |
+| /admin/bots page | ✅ Done — paginated list, per-bot chat/posting toggles, bulk controls |
+| Bot tick cron | ✅ Done — /api/bots/tick (POST=admin, GET=Vercel cron), vercel.json |
+| Discussion board | ⚠️ Migration 016 SQL written — user must run in Supabase SQL Editor |
+| Board UI | ✅ Done — app/board/, realtime, post types, moderation |
+| Site-wide profanity filter | ✅ Done — chat, messages, bio, listing notes, board posts |
+| Condition color coding (browse) | ✅ Done — NM=green, LP=yellow, MP=orange, HP/DMG=red |
+| Relative timestamps (browse) | ✅ Done — "2h ago" style on listing cards |
+| Copy URL on listing detail | ✅ Done — components/CopyButton.tsx |
 
 ---
 
@@ -233,9 +284,21 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — Supabase anon/publishable key
 NEXT_PUBLIC_SITE_URL              — e.g. http://localhost:3000
 SUPABASE_SERVICE_ROLE_KEY         — Secret, server/script only
 ADMIN_EMAIL                       — Email address that gets /admin access
+BOT_TICK_SECRET                   — Secret for manual admin bot tick trigger (x-bot-secret header)
+CRON_SECRET                       — Secret Vercel uses for cron job authorization (Authorization: Bearer)
 STRIPE_SECRET_KEY                 — Reserved, not yet used
 STRIPE_PUBLISHABLE_KEY            — Reserved, not yet used
 ```
+
+## Bot System
+
+- **Migration 015** (supabase/migrations/015_bots.sql): drops FK on global_chat_messages.user_id, creates bots table, adds bot_id column
+- **Migration 016** (supabase/migrations/016_board.sql): creates board_posts table with RLS and realtime
+- **Seed bots**: `npm run seed:bots` — generates 1000 bots (run AFTER migration 015)
+- **Tick route**: `/api/bots/tick` — POST requires `x-bot-secret` header; GET requires Vercel `Authorization: Bearer ${CRON_SECRET}` header
+- **Cron**: `vercel.json` schedules hourly GET call (requires Vercel Pro; Hobby plan = daily max)
+- **Admin UI**: `/admin/bots` — paginated 50/page, individual toggles, bulk enable/disable N bots
+- **Bot messages**: stored with `bot_id` set; chat resolves display from `bots` table; shown with subtle "bot" label
 
 ---
 
@@ -243,5 +306,26 @@ STRIPE_PUBLISHABLE_KEY            — Reserved, not yet used
 Zero prior coding background, comfortable with Linux/terminal.
 Explain commands before running them. Wait for confirmation between major steps.
 
-## Account
-The only user account on this project is **zgarage.toys@gmail.com**. Use this email whenever referencing the test user, backfill targets, or admin access.
+## Accounts
+
+**Admin:** zgarage.toys@gmail.com — use for admin access and testing.
+
+**Community seed accounts** (managed by Claude, maintained to look alive):
+
+| Username | Display Name | Focus |
+|---|---|---|
+| jordancollects | Jordan M. | Vintage Base Set, raw/graded singles |
+| karentradesvtg | Karen C. | Competitive cards, modern sets |
+| sealedvault | Marcus W. | Sealed products (ETBs, booster boxes) |
+| pixelpokemon88 | Sam R. | Casual/budget, accessories |
+| nightshadecards | Alex P. | High-end PSA/CGC graded cards |
+
+Run `npm run seed:community` to create or refresh these accounts. To keep the site feeling active, periodically update their listings (mark some sold, add new ones) via the admin panel or direct DB updates.
+
+## Card Images
+
+Cards have image URLs from two sources (stored in `cards.image_url`):
+- **TCGdex CDN** (`assets.tcgdex.net`) — primary source from `npm run import:tcgdex`
+- **pokemontcg.io** (`images.pokemontcg.io`) — fallback for sets TCGdex lacks images for (`npm run enrich:images`)
+
+`listing_image_url` on a listing always takes priority over the card's default image. Users can override any card image by pasting a URL when creating/editing a listing.

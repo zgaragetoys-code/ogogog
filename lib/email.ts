@@ -1,7 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "ogogog <noreply@ogogog.com>";
+const FROM = "ogogog <zgarage.toys@gmail.com>";
 
 export async function sendMessageNotification({
   toEmail,
@@ -20,6 +19,7 @@ export async function sendMessageNotification({
 }) {
   if (!process.env.RESEND_API_KEY) return;
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: FROM,
     to: toEmail,
