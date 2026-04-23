@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { ConditionType, RawCondition, GradingCompany } from "@/types/database";
 
 async function getUser() {
   const supabase = await createClient();
@@ -10,10 +11,24 @@ async function getUser() {
   return { supabase, user };
 }
 
-export async function addToCollection(cardId: string, quantity: number) {
+type ConditionFields = {
+  condition_type: ConditionType | null;
+  raw_condition: RawCondition | null;
+  grading_company: GradingCompany | null;
+  grade: number | null;
+  notes: string | null;
+};
+
+export async function addToCollection(cardId: string, quantity: number, condition?: ConditionFields) {
   const { supabase, user } = await getUser();
   await supabase.from("collection_items").upsert(
-    { user_id: user.id, card_id: cardId, quantity, for_sale: false },
+    {
+      user_id: user.id,
+      card_id: cardId,
+      quantity,
+      for_sale: false,
+      ...(condition ?? {}),
+    },
     { onConflict: "user_id,card_id", ignoreDuplicates: false }
   );
   revalidatePath("/collection");

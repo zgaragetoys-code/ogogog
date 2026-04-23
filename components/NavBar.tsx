@@ -168,6 +168,13 @@ export default function NavBar({ user, unreadCount }: Props) {
                       >
                         Feature a listing
                       </Link>
+                      <Link
+                        href="/how-it-works"
+                        className="block px-4 py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white transition-colors"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        FAQ / How it works
+                      </Link>
                       <div className="my-1 border-t-2 border-black/10" />
                       <form action={signOut}>
                         <button
@@ -240,6 +247,7 @@ export default function NavBar({ user, unreadCount }: Props) {
               <Link href="/profile" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Profile</Link>
               <Link href="/collection" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>My Collection</Link>
               <Link href="/feature-your-listing" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Feature a listing</Link>
+              <Link href="/how-it-works" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>FAQ / How it works</Link>
               <Link
                 href="/listings/new"
                 className="flex w-full text-center justify-center text-sm bg-black text-white font-bold px-4 py-2.5 mt-3 hover:bg-zinc-800 transition-colors"
