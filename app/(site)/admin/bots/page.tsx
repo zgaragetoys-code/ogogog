@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { toggleBot, bulkToggleBots, triggerBotTick } from "./actions";
+import { bulkToggleBots } from "./actions";
 import BotTickButton from "./BotTickButton";
+import BotRow from "./BotRow";
 
 export const metadata = { title: "Bot Manager | Admin" };
 
@@ -38,16 +39,6 @@ export default async function AdminBotsPage({
     admin.from("bots").select("*", { count: "exact", head: true }).eq("posting_enabled", true),
     admin.from("bots").select("*", { count: "exact", head: true }),
   ]);
-
-  const personalityColors: Record<string, string> = {
-    casual: "bg-gray-100 text-gray-700",
-    hype: "bg-orange-100 text-orange-700",
-    vintage: "bg-purple-100 text-purple-700",
-    competitive: "bg-blue-100 text-blue-700",
-    sealed: "bg-teal-100 text-teal-700",
-    grader: "bg-yellow-100 text-yellow-800",
-    investor: "bg-green-100 text-green-700",
-  };
 
   return (
     <div>
@@ -191,76 +182,9 @@ export default async function AdminBotsPage({
           <span className="w-16 text-center">Posting</span>
         </div>
 
-        {(bots ?? []).map((bot) => {
-          const lastActive = bot.last_active_at
-            ? new Date(bot.last_active_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-            : "never";
-
-          return (
-            <div key={bot.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-gray-50 transition-colors">
-              {/* Identity */}
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-black truncate">@{bot.username}</p>
-                <p className="text-xs text-gray-700 truncate">{bot.display_name} · last active {lastActive}</p>
-              </div>
-
-              {/* Personality */}
-              <div className="w-20 text-center">
-                <span className={`text-[10px] font-black px-1.5 py-0.5 uppercase ${personalityColors[bot.personality] ?? "bg-gray-100 text-gray-700"}`}>
-                  {bot.personality}
-                </span>
-              </div>
-
-              {/* Chat toggle */}
-              <div className="w-16 flex justify-center">
-                <form>
-                  <button
-                    formAction={async () => {
-                      "use server";
-                      await toggleBot(bot.id, "chat_enabled", !bot.chat_enabled);
-                    }}
-                    className={`relative w-10 h-5 transition-colors border-2 border-black focus:outline-none ${
-                      bot.chat_enabled ? "bg-black" : "bg-white"
-                    }`}
-                    title={bot.chat_enabled ? "Disable chat" : "Enable chat"}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-3 h-3 bg-white border border-black transition-transform ${
-                        bot.chat_enabled
-                          ? "translate-x-4 bg-white"
-                          : "translate-x-0.5 bg-gray-400"
-                      }`}
-                    />
-                  </button>
-                </form>
-              </div>
-
-              {/* Posting toggle */}
-              <div className="w-16 flex justify-center">
-                <form>
-                  <button
-                    formAction={async () => {
-                      "use server";
-                      await toggleBot(bot.id, "posting_enabled", !bot.posting_enabled);
-                    }}
-                    className={`relative w-10 h-5 transition-colors border-2 border-black focus:outline-none ${
-                      bot.posting_enabled ? "bg-black" : "bg-white"
-                    }`}
-                    title={bot.posting_enabled ? "Disable posting" : "Enable posting"}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-3 h-3 transition-transform ${
-                        bot.posting_enabled
-                          ? "translate-x-4 bg-white"
-                          : "translate-x-0.5 bg-gray-400"
-                      }`}
-                    />
-                  </button>
-                </form>
-              </div>
-            </div>
-          );
-        })}
+        {(bots ?? []).map((bot) => (
+          <BotRow key={bot.id} bot={bot} />
+        ))}
 
         {(!bots || bots.length === 0) && (
           <div className="px-4 py-12 text-center text-sm text-gray-700">

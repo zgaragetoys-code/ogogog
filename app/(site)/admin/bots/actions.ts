@@ -10,7 +10,6 @@ export async function toggleBot(
 ) {
   const admin = createAdminClient();
   await admin.from("bots").update({ [field]: value }).eq("id", botId);
-  revalidatePath("/admin/bots");
 }
 
 export async function bulkToggleBots(
