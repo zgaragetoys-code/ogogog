@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import Link from "next/link";
 import BrowseFilters from "./BrowseFilters";
+import BrowseRealtimeRefresher from "./BrowseRealtimeRefresher";
 import ListingCard, { type FeedItem } from "./ListingCard";
 import type { ConditionType, ListingType, ProductType } from "@/types/database";
 
@@ -157,6 +158,8 @@ export default async function BrowsePage({
             + New listing
           </Link>
         </div>
+
+        <BrowseRealtimeRefresher />
 
         <div className="mb-5">
           <Suspense>
