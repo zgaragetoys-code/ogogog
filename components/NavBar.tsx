@@ -14,14 +14,17 @@ type UserInfo = {
 
 type Props = {
   user: UserInfo | null;
+  unreadCount: number;
 };
 
-const SHARED_LINKS = [
+type NavLinkDef = { label: string; href: string; badge?: number };
+
+const SHARED_LINKS: NavLinkDef[] = [
   { label: "Browse listings", href: "/browse" },
   { label: "Featured", href: "/featured" },
 ];
 
-const GUEST_ONLY_LINKS = [{ label: "How it works", href: "/how-it-works" }];
+const GUEST_ONLY_LINKS: NavLinkDef[] = [{ label: "How it works", href: "/how-it-works" }];
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -34,38 +37,46 @@ function NavLink({
   pathname,
   onClick,
   mobile,
+  badge,
 }: {
   href: string;
   label: string;
   pathname: string;
   onClick?: () => void;
   mobile?: boolean;
+  badge?: number;
 }) {
   const active = isActive(pathname, href);
+  const badgeEl = badge ? (
+    <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-red-500 text-white rounded-full">
+      {badge > 9 ? "9+" : badge}
+    </span>
+  ) : null;
+
   if (mobile) {
     return (
       <Link
         href={href}
         onClick={onClick}
-        className={`block py-2 text-sm ${active ? "text-black font-semibold" : "text-gray-500"}`}
+        className={`flex items-center py-2 text-sm ${active ? "text-black font-semibold" : "text-gray-500"}`}
       >
-        {label}
+        {label}{badgeEl}
       </Link>
     );
   }
   return (
     <Link
       href={href}
-      className={`text-sm transition-colors ${
+      className={`flex items-center text-sm transition-colors ${
         active ? "text-black font-semibold" : "text-gray-500 hover:text-black"
       }`}
     >
-      {label}
+      {label}{badgeEl}
     </Link>
   );
 }
 
-export default function NavBar({ user }: Props) {
+export default function NavBar({ user, unreadCount }: Props) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -74,7 +85,7 @@ export default function NavBar({ user }: Props) {
   const userLinks = [
     ...SHARED_LINKS,
     { label: "My listings", href: "/listings/mine" },
-    { label: "Messages", href: "/messages" },
+    { label: "Messages", href: "/messages", badge: unreadCount || undefined },
   ];
   const links = user ? userLinks : guestLinks;
 
@@ -93,8 +104,8 @@ export default function NavBar({ user }: Props) {
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-6">
-          {links.map(({ label, href }) => (
-            <NavLink key={href} href={href} label={label} pathname={pathname} />
+          {links.map(({ label, href, badge }) => (
+            <NavLink key={href} href={href} label={label} pathname={pathname} badge={badge} />
           ))}
         </div>
 
@@ -200,7 +211,7 @@ export default function NavBar({ user }: Props) {
       {/* Mobile menu panel */}
       {menuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-0.5">
-          {links.map(({ label, href }) => (
+          {links.map(({ label, href, badge }) => (
             <NavLink
               key={href}
               href={href}
@@ -208,6 +219,7 @@ export default function NavBar({ user }: Props) {
               pathname={pathname}
               onClick={() => setMenuOpen(false)}
               mobile
+              badge={badge}
             />
           ))}
           {user ? (

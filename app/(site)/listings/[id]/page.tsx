@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+
 import { avatarUrl } from "@/lib/avatar";
 import { markAsSold } from "./actions";
 import {
@@ -101,9 +102,11 @@ function PhotoSection({ urls, notes }: { urls: string[]; notes: string | null })
 function SellerCard({
   profile,
   isOwner,
+  ownerId,
   listingId,
   isCustom,
   listingStatus,
+  currentUserId,
 }: {
   profile: {
     username: string | null;
@@ -115,9 +118,11 @@ function SellerCard({
     created_at: string;
   } | null;
   isOwner: boolean;
+  ownerId: string;
   listingId: string;
   isCustom: boolean;
   listingStatus: string;
+  currentUserId: string | null;
 }) {
   const seed = profile?.avatar_seed ?? listingId;
   const style = profile?.avatar_style ?? "identicon";
@@ -159,11 +164,20 @@ function SellerCard({
             </button>
           </form>
         )
-      ) : (
-        <button disabled
-          className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl opacity-50 cursor-not-allowed">
+      ) : currentUserId ? (
+        <Link
+          href={`/messages/${listingId}/${ownerId}`}
+          className="block w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors text-center"
+        >
           Message seller
-        </button>
+        </Link>
+      ) : (
+        <Link
+          href={`/auth/login?next=/messages/${listingId}/${ownerId}`}
+          className="block w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors text-center"
+        >
+          Sign in to message seller
+        </Link>
       )}
     </div>
   );
@@ -256,9 +270,11 @@ export default async function ListingDetailPage({
             <SellerCard
               profile={profile}
               isOwner={isOwner}
+              ownerId={ownerId}
               listingId={id}
               isCustom={isCustom}
               listingStatus={listing.status}
+              currentUserId={user?.id ?? null}
             />
             <p className="text-xs text-gray-400 text-center">
               Listed {new Date(listing.created_at).toLocaleDateString("en-US", {

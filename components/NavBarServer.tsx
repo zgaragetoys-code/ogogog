@@ -9,13 +9,20 @@ export default async function NavBarServer() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return <NavBar user={null} />;
+  if (!user) return <NavBar user={null} unreadCount={0} />;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, display_name, avatar_seed, avatar_style")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { count: unreadCount }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("username, display_name, avatar_seed, avatar_style")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("receiver_id", user.id)
+      .is("read_at", null),
+  ]);
 
   const seed = profile?.avatar_seed ?? user.id;
   const style = (profile?.avatar_style ?? "identicon") as AvatarStyle;
@@ -28,6 +35,7 @@ export default async function NavBarServer() {
         username: profile?.username ?? null,
         avatarUrl: avatarUrl(style, seed),
       }}
+      unreadCount={unreadCount ?? 0}
     />
   );
 }
