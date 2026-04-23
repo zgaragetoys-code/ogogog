@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { toggleBot } from "./actions";
 
 type Bot = {
@@ -54,6 +54,9 @@ export default function BotRow({ bot }: { bot: Bot }) {
   const [chatEnabled, setChatEnabled] = useState(bot.chat_enabled);
   const [postingEnabled, setPostingEnabled] = useState(bot.posting_enabled);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => { setChatEnabled(bot.chat_enabled); }, [bot.chat_enabled]);
+  useEffect(() => { setPostingEnabled(bot.posting_enabled); }, [bot.posting_enabled]);
 
   const lastActive = bot.last_active_at
     ? new Date(bot.last_active_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
