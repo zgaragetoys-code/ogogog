@@ -88,9 +88,6 @@ function MessageRow({
       <div className={`flex-1 min-w-0 ${isMine ? "items-end" : "items-start"} flex flex-col`}>
         <div className={`flex items-baseline gap-2 mb-0.5 ${isMine ? "flex-row-reverse" : ""}`}>
           <span className="text-xs font-bold text-black">{name}</span>
-          {msg.is_bot && (
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">bot</span>
-          )}
           <span className="text-[10px] text-gray-700">{timeLabel(msg.created_at)}</span>
         </div>
         <div className={`flex items-center gap-1.5 ${isMine ? "flex-row-reverse" : ""}`}>
@@ -98,8 +95,6 @@ function MessageRow({
             className={`text-sm px-3 py-2 max-w-xs sm:max-w-sm leading-relaxed break-words border-2 ${
               isMine
                 ? "bg-black text-white border-black"
-                : msg.is_bot
-                ? "bg-gray-50 text-black border-gray-300"
                 : "bg-white text-black border-black"
             }`}
           >
