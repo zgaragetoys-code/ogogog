@@ -25,7 +25,7 @@ export default async function PublicProfilePage({
   if (!profileData) notFound();
   const profile = profileData as Profile;
 
-  const [{ data: cardData }, { data: customData }] = await Promise.all([
+  const [{ data: cardData }, { data: customData }, { data: collectionData }] = await Promise.all([
     supabase
       .from("listings")
       .select("*, card:cards(*)")
@@ -38,10 +38,23 @@ export default async function PublicProfilePage({
       .eq("user_id", profile.id)
       .eq("status", "active")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("collection_items")
+      .select("id, quantity, for_sale, card:cards(name, set_name, card_number, image_url)")
+      .eq("user_id", profile.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const cardListings = (cardData ?? []) as unknown as ListingWithCard[];
   const customListings = (customData ?? []) as unknown as CustomListing[];
+
+  type CollectionCard = {
+    id: string;
+    quantity: number;
+    for_sale: boolean;
+    card: { name: string; set_name: string; card_number: string; image_url: string | null };
+  };
+  const collectionItems = (collectionData ?? []) as unknown as CollectionCard[];
 
   const allListings = [
     ...cardListings.map(d => ({ kind: "card" as const, data: d })),
@@ -90,25 +103,73 @@ export default async function PublicProfilePage({
           <CopyProfileUrl username={profile.username!} />
         </div>
 
-        {/* Collectr collection */}
+        {/* Collectr embed */}
         {profile.collectr_url && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-black">Collection</p>
-              <p className="text-xs text-gray-500 mt-0.5">{displayName}&apos;s cards on Collectr</p>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-black">{displayName}&apos;s Collectr collection</p>
+              <a
+                href={profile.collectr_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+              >
+                Open in Collectr
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
-            <a
-              href={profile.collectr_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium shrink-0"
-            >
-              View Collection
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+            <iframe
+              src={profile.collectr_url}
+              className="w-full border-0"
+              style={{ height: 560 }}
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-popups"
+              title="Collectr collection"
+            />
+          </div>
+        )}
+
+        {/* ogogog collection */}
+        {collectionItems.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-black">
+                Collection
+                <span className="text-sm font-normal text-gray-500 ml-2">{collectionItems.length} cards</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+              {collectionItems.map(item => (
+                <div key={item.id} className="relative group">
+                  {item.card.image_url ? (
+                    <img
+                      src={item.card.image_url}
+                      alt={item.card.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-auto rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[2.5/3.5] bg-gray-100 rounded-lg" />
+                  )}
+                  {item.quantity > 1 && (
+                    <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      ×{item.quantity}
+                    </span>
+                  )}
+                  {item.for_sale && (
+                    <span className="absolute top-1 right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      FS
+                    </span>
+                  )}
+                  <div className="hidden group-hover:block absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] p-1 rounded-b-lg leading-tight">
+                    {item.card.name}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
