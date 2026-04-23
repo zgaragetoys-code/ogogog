@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const BOT_SECRET = process.env.BOT_TICK_SECRET;
-const CRON_SECRET = process.env.CRON_SECRET;
-
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 function rand<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function isAuthorized(req: Request): boolean {
-  // Accept x-bot-secret header (manual admin trigger)
+  const BOT_SECRET = process.env.BOT_TICK_SECRET;
+  const CRON_SECRET = process.env.CRON_SECRET;
+
   const botSecret = req.headers.get("x-bot-secret");
   if (BOT_SECRET && botSecret === BOT_SECRET) return true;
 
-  // Accept Vercel cron Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get("authorization");
   if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) return true;
 
@@ -154,6 +154,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const sb = getClient();
   const body = await req.json().catch(() => ({}));
   const count: number = Math.min(Number(body.count) || 8, 30);
 
@@ -199,6 +200,7 @@ export async function POST(req: Request) {
 
 // Vercel cron jobs send GET. Only CRON_SECRET in Authorization header is accepted here.
 export async function GET(req: Request) {
+  const CRON_SECRET = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
