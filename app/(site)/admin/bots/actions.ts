@@ -35,8 +35,8 @@ export async function bulkToggleBots(
     const ids = data.map((b) => b.id);
     await admin.from("bots").update({ [field]: value }).in("id", ids);
   } else {
-    // Toggle ALL
-    await admin.from("bots").update({ [field]: value });
+    // Toggle ALL — .not() filter required; PostgREST rejects filterless updates
+    await admin.from("bots").update({ [field]: value }).not("id", "is", null);
   }
 
   revalidatePath("/admin/bots");

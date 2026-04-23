@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { bulkToggleBots } from "./actions";
 import BotTickButton from "./BotTickButton";
 import BotRow from "./BotRow";
+import { BulkButton } from "./BulkButton";
 
 export const metadata = { title: "Bot Manager | Admin" };
 
@@ -62,29 +63,20 @@ export default async function AdminBotsPage({
           <p className="text-xs font-bold text-gray-700 mb-2">Chat</p>
           <div className="flex flex-wrap gap-2">
             <form>
-              <button
-                formAction={bulkToggleBots.bind(null, "chat_enabled", true, undefined)}
-                className="text-xs px-3 py-1.5 bg-black text-white font-bold hover:bg-zinc-800 transition-colors"
-              >
+              <BulkButton variant="solid" formAction={bulkToggleBots.bind(null, "chat_enabled", true, undefined)}>
                 Enable All
-              </button>
+              </BulkButton>
             </form>
             <form>
-              <button
-                formAction={bulkToggleBots.bind(null, "chat_enabled", false, undefined)}
-                className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
-              >
+              <BulkButton formAction={bulkToggleBots.bind(null, "chat_enabled", false, undefined)}>
                 Disable All
-              </button>
+              </BulkButton>
             </form>
             {[50, 100, 150, 200].map((n) => (
               <form key={n}>
-                <button
-                  formAction={bulkToggleBots.bind(null, "chat_enabled", true, n)}
-                  className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
-                >
+                <BulkButton formAction={bulkToggleBots.bind(null, "chat_enabled", true, n)}>
                   Enable {n}
-                </button>
+                </BulkButton>
               </form>
             ))}
           </div>
@@ -95,29 +87,20 @@ export default async function AdminBotsPage({
           <p className="text-xs font-bold text-gray-700 mb-2">Posting (Feed Activity)</p>
           <div className="flex flex-wrap gap-2">
             <form>
-              <button
-                formAction={bulkToggleBots.bind(null, "posting_enabled", true, undefined)}
-                className="text-xs px-3 py-1.5 bg-black text-white font-bold hover:bg-zinc-800 transition-colors"
-              >
+              <BulkButton variant="solid" formAction={bulkToggleBots.bind(null, "posting_enabled", true, undefined)}>
                 Enable All
-              </button>
+              </BulkButton>
             </form>
             <form>
-              <button
-                formAction={bulkToggleBots.bind(null, "posting_enabled", false, undefined)}
-                className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
-              >
+              <BulkButton formAction={bulkToggleBots.bind(null, "posting_enabled", false, undefined)}>
                 Disable All
-              </button>
+              </BulkButton>
             </form>
             {[50, 100, 150, 200].map((n) => (
               <form key={n}>
-                <button
-                  formAction={bulkToggleBots.bind(null, "posting_enabled", true, n)}
-                  className="text-xs px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
-                >
+                <BulkButton formAction={bulkToggleBots.bind(null, "posting_enabled", true, n)}>
                   Enable {n}
-                </button>
+                </BulkButton>
               </form>
             ))}
           </div>
