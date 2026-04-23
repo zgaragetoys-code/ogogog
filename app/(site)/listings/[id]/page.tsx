@@ -8,7 +8,7 @@ import { markAsSold, cancelListing } from "./actions";
 import PhotoGrid from "./PhotoGrid";
 import CardImage from "./CardImage";
 import BookmarkButton from "@/components/BookmarkButton";
-import CopyButton from "@/components/CopyButton";
+import ShareButton from "@/components/ShareButton";
 import {
   PRODUCT_TYPE_LABELS,
   RAW_CONDITION_LABELS,
@@ -319,26 +319,30 @@ export default async function ListingDetailPage({
               listingStatus={listing.status}
               currentUserId={user?.id ?? null}
             />
-            {user && !isOwner && (
+            {user && !isOwner ? (
               <div className="flex items-center justify-between border-2 border-black px-4 py-3">
                 <span className="text-xs font-bold text-black uppercase tracking-wide">Save listing</span>
-                <BookmarkButton
-                  targetType="listing"
-                  targetId={id}
-                  initialBookmarked={isBookmarked}
-                />
+                <div className="flex items-center gap-2">
+                  <ShareButton listingId={id} />
+                  <BookmarkButton
+                    targetType="listing"
+                    targetId={id}
+                    initialBookmarked={isBookmarked}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between border-2 border-black px-4 py-3">
+                <span className="text-xs font-bold text-black uppercase tracking-wide">Share listing</span>
+                <ShareButton listingId={id} />
               </div>
             )}
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center px-1">
               <p className="text-xs text-gray-700">
                 Listed {new Date(listing.created_at).toLocaleDateString("en-US", {
                   month: "short", day: "numeric", year: "numeric",
                 })}
               </p>
-              <CopyButton
-                value={`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://ogogog.com"}/listings/${id}`}
-                label="Share"
-              />
             </div>
           </div>
         </div>

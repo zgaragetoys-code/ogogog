@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CardThumb from "./CardThumb";
 import BookmarkButton from "@/components/BookmarkButton";
+import ShareButton from "@/components/ShareButton";
 import {
   PRODUCT_TYPE_LABELS,
   RAW_CONDITION_LABELS,
@@ -133,17 +134,18 @@ export default function ListingCard({ item, currentUserId, isBookmarked }: Props
     <div className={`relative group bg-white border-2 overflow-hidden flex flex-col hover:shadow-[4px_4px_0px_0px_#000] transition-shadow ${
       item.is_featured ? "border-yellow-400" : "border-black"
     }`}>
-      {/* Bookmark button — top-right corner, visible on hover */}
-      {currentUserId && (
-        <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Share + Bookmark buttons — top-right corner, visible on hover */}
+      <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <ShareButton listingId={item.id} size="sm" />
+        {currentUserId && (
           <BookmarkButton
             targetType="listing"
             targetId={item.id}
             initialBookmarked={isBookmarked ?? false}
             size="sm"
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <Link href={`/listings/${item.id}`} className="flex flex-col flex-1">
         {item.is_featured && (
