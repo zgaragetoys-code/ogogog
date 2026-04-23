@@ -84,15 +84,15 @@ export default async function PublicProfilePage({
   ].filter(Boolean) as { href: string; label: string }[];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-white">
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-4">
 
         {/* Identity card */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-start gap-5">
+        <div className="bg-white border-2 border-black p-6 flex items-start gap-5">
           <img
             src={avatarUrl(style, seed)}
             alt={displayName}
-            className="w-20 h-20 rounded-full shrink-0"
+            className="keep-round w-20 h-20 shrink-0"
           />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-black truncate">{displayName}</h1>
@@ -105,7 +105,7 @@ export default async function PublicProfilePage({
 
         {/* Collectr embed */}
         {profile.collectr_url && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border-2 border-black overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-black">{displayName}&apos;s Collectr collection</p>
               <a
@@ -175,7 +175,7 @@ export default async function PublicProfilePage({
 
         {/* Notes */}
         {profile.notes && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border-2 border-black p-6">
             <h2 className="text-sm font-semibold text-black mb-2">About</h2>
             <p className="text-sm text-black whitespace-pre-wrap">{profile.notes}</p>
           </div>
@@ -183,7 +183,7 @@ export default async function PublicProfilePage({
 
         {/* Social links */}
         {socialLinks.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border-2 border-black p-6">
             <h2 className="text-sm font-semibold text-black mb-3">Links</h2>
             <div className="space-y-2">
               {socialLinks.map((l) => (
@@ -192,7 +192,7 @@ export default async function PublicProfilePage({
                   href={l.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                  className="flex items-center gap-1.5 text-sm font-bold text-black hover:underline"
                 >
                   {l.label}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,19 +207,19 @@ export default async function PublicProfilePage({
 
         {/* Active listings */}
         <div>
-          <h2 className="text-lg font-bold text-black mb-3">
+          <h2 className="text-xs font-black uppercase tracking-widest text-black mb-3">
             Active listings
             {allListings.length > 0 && (
-              <span className="text-sm font-normal text-gray-500 ml-2">{allListings.length}</span>
+              <span className="text-xs font-bold text-gray-500 ml-2">{allListings.length}</span>
             )}
           </h2>
 
           {allListings.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <p className="text-sm text-black">No active listings.</p>
+            <div className="border-2 border-black p-8 text-center">
+              <p className="text-sm font-bold text-gray-500">No active listings.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="border-2 border-black divide-y-0">
               {allListings.map((item) =>
                 item.kind === "card" ? (
                   <CardListingRow key={`card-${item.data.id}`} listing={item.data} />
@@ -263,7 +263,7 @@ function PriceDisplay({ priceType, price }: { priceType: string; price: number |
 function CardListingRow({ listing }: { listing: ListingWithCard }) {
   const { card } = listing;
   return (
-    <Link href={`/listings/${listing.id}`} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+    <Link href={`/listings/${listing.id}`} className="flex items-center gap-4 p-4 border-b border-black/10 last:border-b-0 hover:bg-gray-50 transition-colors">
       {card.image_url ? (
         <img src={card.image_url} alt={card.name} referrerPolicy="no-referrer"
           className="w-12 h-auto rounded shrink-0" />
@@ -285,7 +285,7 @@ function CardListingRow({ listing }: { listing: ListingWithCard }) {
 
 function CustomListingRow({ listing }: { listing: CustomListing }) {
   return (
-    <Link href={`/listings/${listing.id}`} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+    <Link href={`/listings/${listing.id}`} className="flex items-center gap-4 p-4 border-b border-black/10 last:border-b-0 hover:bg-gray-50 transition-colors">
       <div className="w-12 h-16 bg-gray-100 rounded shrink-0 flex items-center justify-center">
         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -295,7 +295,7 @@ function CustomListingRow({ listing }: { listing: CustomListing }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <p className="font-semibold text-black truncate">{listing.title}</p>
-          <span className="text-xs text-gray-500 border border-gray-200 rounded px-1.5 py-0.5 shrink-0">Custom</span>
+          <span className="text-[10px] font-black border border-black px-1.5 py-0.5 shrink-0 uppercase">Custom</span>
         </div>
         <p className="text-xs text-black">
           {CUSTOM_CATEGORY_LABELS[listing.custom_category]} · {GENERIC_CONDITION_LABELS[listing.condition_generic]}

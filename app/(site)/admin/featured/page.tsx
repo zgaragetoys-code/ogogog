@@ -10,16 +10,8 @@ export default async function AdminFeaturedPage() {
   if (!user || user.email !== ADMIN_EMAIL) redirect("/");
 
   const [{ data: cardListings }, { data: customListings }] = await Promise.all([
-    supabase
-      .from("listings")
-      .select("id, status, is_featured, featured_until, card:cards(name, image_url)")
-      .in("status", ["active", "pending"])
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("custom_listings")
-      .select("id, status, is_featured, featured_until, title")
-      .in("status", ["active", "pending"])
-      .order("created_at", { ascending: false }),
+    supabase.from("listings").select("id, status, is_featured, featured_until, card:cards(name, image_url)").in("status", ["active", "pending"]).order("created_at", { ascending: false }),
+    supabase.from("custom_listings").select("id, status, is_featured, featured_until, title").in("status", ["active", "pending"]).order("created_at", { ascending: false }),
   ]);
 
   const now = new Date().toISOString();
@@ -39,47 +31,42 @@ export default async function AdminFeaturedPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-black mb-1">Admin — Featured listings</h1>
-        <p className="text-sm text-gray-500 mb-6">Toggle featured status and set expiry dates.</p>
+        <div className="border-b-2 border-black pb-4 mb-6">
+          <h1 className="text-2xl font-black text-black uppercase tracking-tight">Admin — Featured</h1>
+          <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Toggle featured status and set expiry dates.</p>
+        </div>
 
         {allItems.length === 0 ? (
-          <p className="text-sm text-gray-500">No active listings.</p>
+          <div className="border-2 border-black p-12 text-center">
+            <p className="text-sm font-bold text-gray-500">No active listings.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y-2 divide-black border-t-2 border-b-2 border-black">
             {allItems.map((item) => {
-              const isActiveFeatured = item.isFeatured &&
-                (!item.featuredUntil || item.featuredUntil > now);
-              const expiryValue = item.featuredUntil
-                ? new Date(item.featuredUntil).toISOString().slice(0, 10)
-                : "";
+              const isActiveFeatured = item.isFeatured && (!item.featuredUntil || item.featuredUntil > now);
+              const expiryValue = item.featuredUntil ? new Date(item.featuredUntil).toISOString().slice(0, 10) : "";
 
               return (
-                <div key={item.id}
-                  className={`bg-white border rounded-xl p-4 flex items-center gap-4 ${
-                    isActiveFeatured ? "border-amber-300 bg-amber-50" : "border-gray-200"
-                  }`}
-                >
+                <div key={item.id} className={`flex items-center gap-4 p-4 ${isActiveFeatured ? "bg-yellow-50" : "bg-white"}`}>
                   {item.image ? (
-                    <img src={item.image} alt="" className="w-10 h-auto rounded shrink-0" referrerPolicy="no-referrer" />
+                    <img src={item.image} alt="" className="w-10 h-auto shrink-0" referrerPolicy="no-referrer" />
                   ) : (
-                    <div className="w-10 h-14 bg-gray-100 rounded shrink-0" />
+                    <div className="w-10 h-14 bg-gray-200 shrink-0" />
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black truncate">{item.title}</p>
+                    <p className="text-sm font-bold text-black truncate">{item.title}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {item.isCustom && (
-                        <span className="text-xs text-gray-500 border border-gray-200 rounded px-1.5">Custom</span>
+                        <span className="text-[10px] font-black border border-black px-1.5 uppercase">Custom</span>
                       )}
                       {isActiveFeatured && (
-                        <span className="text-xs text-amber-700 font-medium">✦ Featured</span>
+                        <span className="text-[10px] font-black bg-yellow-400 text-black px-1.5 uppercase">✦ Featured</span>
                       )}
                       {item.featuredUntil && (
-                        <span className="text-xs text-gray-400">
-                          until {new Date(item.featuredUntil).toLocaleDateString()}
-                        </span>
+                        <span className="text-xs text-gray-400">until {new Date(item.featuredUntil).toLocaleDateString()}</span>
                       )}
                     </div>
                   </div>
@@ -89,15 +76,15 @@ export default async function AdminFeaturedPage() {
                       type="date"
                       name="until"
                       defaultValue={expiryValue}
-                      className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="text-sm border-2 border-black px-2 py-1 focus:outline-none focus:ring-0"
                     />
                     {isActiveFeatured ? (
                       <button
-                        formAction={async (fd) => {
+                        formAction={async () => {
                           "use server";
                           await toggleFeatured(item.id, item.isCustom, false, null);
                         }}
-                        className="text-sm px-3 py-1.5 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors"
+                        className="text-sm px-3 py-1.5 border-2 border-black text-black font-bold hover:bg-black hover:text-white transition-colors"
                       >
                         Remove
                       </button>
@@ -108,7 +95,7 @@ export default async function AdminFeaturedPage() {
                           const until = fd.get("until") as string | null;
                           await toggleFeatured(item.id, item.isCustom, true, until || null);
                         }}
-                        className="text-sm px-3 py-1.5 bg-amber-400 text-amber-900 font-medium rounded-lg hover:bg-amber-500 transition-colors"
+                        className="text-sm px-3 py-1.5 bg-yellow-400 text-black font-black hover:bg-yellow-500 transition-colors"
                       >
                         ✦ Feature
                       </button>

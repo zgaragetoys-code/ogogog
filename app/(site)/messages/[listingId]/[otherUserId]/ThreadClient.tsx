@@ -79,9 +79,7 @@ export default function ThreadClient({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
         {messages.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">
-            No messages yet. Say hello!
-          </p>
+          <p className="text-center text-sm text-gray-400 py-8">No messages yet. Say hello!</p>
         )}
         {messages.map((msg) => {
           const isMe = msg.sender_id === currentUserId;
@@ -89,10 +87,10 @@ export default function ThreadClient({
             <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-xs lg:max-w-md space-y-1 ${isMe ? "items-end" : "items-start"} flex flex-col`}>
                 <div
-                  className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  className={`px-4 py-2.5 text-sm leading-relaxed ${
                     isMe
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-white border border-gray-200 text-black rounded-bl-sm"
+                      ? "bg-black text-white"
+                      : "bg-white border-2 border-black text-black"
                   }`}
                 >
                   {msg.content}
@@ -106,8 +104,8 @@ export default function ThreadClient({
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 bg-white px-4 py-3">
-        {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      <div className="border-t-2 border-black bg-white px-4 py-3">
+        {error && <p className="text-xs text-red-600 mb-2 font-bold">{error}</p>}
         <div className="flex gap-2">
           <textarea
             value={input}
@@ -118,12 +116,12 @@ export default function ThreadClient({
             placeholder={`Message ${otherUserName}…`}
             rows={1}
             maxLength={2000}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm text-black resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 border-2 border-black text-sm text-black resize-none focus:outline-none focus:ring-0"
           />
           <button
             onClick={handleSend}
             disabled={pending || !input.trim()}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0"
+            className="px-4 py-2 bg-black text-white text-sm font-bold hover:bg-zinc-800 disabled:opacity-40 transition-colors shrink-0"
           >
             Send
           </button>

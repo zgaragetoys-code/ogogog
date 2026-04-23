@@ -9,10 +9,10 @@ import { COUNTRIES } from "@/data/countries";
 import { US_STATES } from "@/data/us-states";
 
 const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const labelCls = "block text-sm font-medium text-black mb-1";
-const errorCls = "text-red-600 text-xs mt-1";
+  "w-full px-3 py-2 border-2 border-black text-sm text-black " +
+  "focus:outline-none focus:ring-0";
+const labelCls = "block text-xs font-black uppercase tracking-widest text-black mb-1";
+const errorCls = "text-red-600 text-xs mt-1 font-bold";
 
 // External prop — allows null so callers don't need a fallback
 type Props = { profile: Profile | null; email: string };
@@ -47,7 +47,7 @@ function SocialLink({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+      className="flex items-center gap-1.5 text-sm font-bold text-black hover:underline"
     >
       {label}
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,20 +83,20 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
     <div className="space-y-6">
       {/* Incomplete profile banner */}
       {!profile.username && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-amber-800">Set a username to complete your profile.</p>
-          <button onClick={onEdit} className="text-sm font-medium text-amber-900 underline shrink-0">
+        <div className="bg-yellow-400 border-2 border-black px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm font-bold text-black">Set a username to complete your profile.</p>
+          <button onClick={onEdit} className="text-sm font-black text-black underline shrink-0">
             Complete now
           </button>
         </div>
       )}
 
       {/* Avatar + identity */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-start gap-5">
+      <div className="bg-white border-2 border-black p-6 flex items-start gap-5">
         <img
           src={avatarUrl(style as AvatarStyle, seed)}
           alt={displayName}
-          className="w-20 h-20 rounded-full shrink-0"
+          className="keep-round w-20 h-20 shrink-0"
         />
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-black truncate">{displayName}</h2>
@@ -108,7 +108,7 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
         </div>
         <button
           onClick={onEdit}
-          className="flex items-center gap-1.5 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors shrink-0 text-black"
+          className="flex items-center gap-1.5 text-sm border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors shrink-0 text-black font-bold"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -119,14 +119,14 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
       </div>
 
       {/* My collection link */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4">
+      <div className="bg-white border-2 border-black p-5 flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-black">My collection</p>
           <p className="text-xs text-gray-500 mt-0.5">Track what you own and mark cards for sale</p>
         </div>
         <Link
           href="/collection"
-          className="text-sm bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium shrink-0"
+          className="text-sm bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors font-bold shrink-0"
         >
           Manage →
         </Link>
@@ -134,8 +134,8 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
 
       {/* Collectr embed */}
       {profile.collectr_url && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+        <div className="bg-white border-2 border-black overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b-2 border-black">
             <p className="text-sm font-semibold text-black">Collectr collection</p>
             <a
               href={profile.collectr_url}
@@ -163,7 +163,7 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
 
       {/* Notes */}
       {profile.notes && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border-2 border-black p-6">
           <h3 className="text-sm font-semibold text-black mb-2">About</h3>
           <p className="text-sm text-black whitespace-pre-wrap">{profile.notes}</p>
         </div>
@@ -171,7 +171,7 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
 
       {/* Social / marketplace links */}
       {socialLinks.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border-2 border-black p-6">
           <h3 className="text-sm font-semibold text-black mb-3">Links</h3>
           <div className="space-y-2">
             {socialLinks.map((l) => (
@@ -183,7 +183,7 @@ function ProfileView({ profile, email, onEdit }: InternalProps & { onEdit: () =>
 
       {/* Public profile link */}
       {profile.username && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-white border-2 border-black p-4 flex items-center justify-between gap-3">
           <span className="text-sm text-black truncate">
             Your public profile: <span className="font-medium">/u/{profile.username}</span>
           </span>
@@ -202,7 +202,7 @@ function CopyButton({ path }: { path: string }) {
     setTimeout(() => setCopied(false), 2000);
   }
   return (
-    <button onClick={copy} className="text-sm text-blue-600 hover:underline shrink-0 whitespace-nowrap">
+    <button onClick={copy} className="text-sm font-bold text-black hover:underline shrink-0 whitespace-nowrap">
       {copied ? "Copied!" : "Copy link"}
     </button>
   );
@@ -280,7 +280,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
       {/* Avatar picker */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white border-2 border-black p-6">
         <h2 className="text-base font-semibold text-black mb-1">Avatar</h2>
         <p className="text-xs text-black mb-4">Choose a style — your avatar is generated from your seed.</p>
 
@@ -290,16 +290,16 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
               key={s}
               type="button"
               onClick={() => setAvatarStyle(s)}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-colors ${
+              className={`flex flex-col items-center gap-1 p-2 border-2 transition-colors ${
                 avatarStyle === s
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-black bg-gray-100"
+                  : "border-gray-300 hover:border-black"
               }`}
             >
               <img
                 src={avatarUrl(s, avatarSeed)}
                 alt={s}
-                className="w-12 h-12 rounded-full"
+                className="keep-round w-12 h-12"
               />
               <span className="text-xs text-black leading-tight text-center">{AVATAR_STYLE_LABELS[s]}</span>
             </button>
@@ -309,12 +309,12 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-black">Current seed:</span>
-            <code className="text-xs bg-gray-100 px-2 py-0.5 rounded">{avatarSeed}</code>
+            <code className="text-xs bg-gray-100 border border-black px-2 py-0.5 font-mono">{avatarSeed}</code>
           </div>
           <button
             type="button"
             onClick={() => setAvatarSeed(randomSeed())}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs font-bold text-black hover:underline"
           >
             Shuffle seed
           </button>
@@ -322,13 +322,13 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
       </div>
 
       {/* Identity */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+      <div className="bg-white border-2 border-black p-6 space-y-4">
         <h2 className="text-base font-semibold text-black">Identity</h2>
         <div>
           <label htmlFor="username" className={labelCls}>
             Username <span className="text-red-500">*</span>
           </label>
-          <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+          <div className="flex items-center border-2 border-black focus-within:ring-0">
             <span className="pl-3 text-sm text-gray-400 select-none">@</span>
             <input
               id="username"
@@ -358,7 +358,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
       </div>
 
       {/* Location */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+      <div className="bg-white border-2 border-black p-6 space-y-4">
         <h2 className="text-base font-semibold text-black">Location</h2>
 
         {/* Country searchable dropdown */}
@@ -381,13 +381,13 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
             autoComplete="off"
           />
           {showCountryList && filteredCountries.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+            <div className="absolute z-10 w-full mt-0 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] max-h-52 overflow-y-auto">
               {filteredCountries.map((c) => (
                 <button
                   key={c.code}
                   type="button"
                   onMouseDown={() => selectCountry(c.code, c.name)}
-                  className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50"
+                  className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100 font-medium"
                 >
                   {c.name}
                 </button>
@@ -430,7 +430,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
       </div>
 
       {/* About */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white border-2 border-black p-6">
         <h2 className="text-base font-semibold text-black mb-1">About</h2>
         <p className="text-xs text-black mb-3">Collecting focus, trading preferences, anything you want buyers/sellers to know.</p>
         <textarea
@@ -445,7 +445,7 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
       </div>
 
       {/* Social + marketplace links */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+      <div className="bg-white border-2 border-black p-6 space-y-4">
         <h2 className="text-base font-semibold text-black">Links <span className="font-normal text-sm text-gray-400">(all optional)</span></h2>
         {[
           { id: "collectr_url",   label: "Collectr URL",      value: collectrUrl,      set: setCollectrUrl,      ph: "https://collectr.io/yourname" },
@@ -469,14 +469,14 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-3 border border-gray-300 text-black text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+          className="flex-1 py-3 border-2 border-black text-black text-sm font-bold hover:bg-gray-100 transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+          className="flex-1 py-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white font-bold transition-colors"
         >
           {saving ? "Saving…" : "Save profile"}
         </button>
@@ -492,7 +492,7 @@ export default function ProfileClient({ profile: rawProfile, email }: Props) {
   const [mode, setMode] = useState<"view" | "edit">("view");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <main className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-black mb-6">
           {mode === "edit" ? "Edit profile" : "My profile"}

@@ -100,7 +100,7 @@ export default function CollectionClient({ initialItems }: Props) {
       <CollectionImport onImported={handleImported} />
 
       {/* Add card panel */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      <div className="bg-white border-2 border-black p-5 space-y-4">
         <h2 className="text-sm font-semibold text-black">Add a card</h2>
         <CardSearch key={addKey} onSelect={setSelectedCard} />
 
@@ -125,7 +125,7 @@ export default function CollectionClient({ initialItems }: Props) {
             <button
               onClick={handleAdd}
               disabled={isPending}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-black text-white text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition-colors"
             >
               {isPending ? "Adding…" : "Add to collection"}
             </button>
@@ -146,7 +146,7 @@ export default function CollectionClient({ initialItems }: Props) {
 
       {/* Collection grid */}
       {items.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-16 text-center">
+        <div className="bg-white border-2 border-black p-16 text-center">
           <p className="text-black font-medium mb-1">Your collection is empty</p>
           <p className="text-sm text-gray-500">Search for a card above to start adding.</p>
         </div>
@@ -156,7 +156,7 @@ export default function CollectionClient({ initialItems }: Props) {
             <div
               key={item.id}
               className={`bg-white border rounded-xl p-3 flex flex-col gap-2 ${
-                item.for_sale ? "border-green-300" : "border-gray-200"
+                item.for_sale ? "border-black" : "border-black"
               }`}
             >
               {item.card.image_url ? (
@@ -177,7 +177,7 @@ export default function CollectionClient({ initialItems }: Props) {
 
               {/* Quantity control */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center border border-gray-200 rounded overflow-hidden">
+                <div className="flex items-center border border-black overflow-hidden">
                   <button
                     onClick={() => handleQuantityChange(item, item.quantity - 1)}
                     disabled={isPending || item.quantity <= 1}
@@ -198,8 +198,8 @@ export default function CollectionClient({ initialItems }: Props) {
                 disabled={isPending}
                 className={`w-full text-xs py-1 rounded-lg font-medium transition-colors ${
                   item.for_sale
-                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-black text-white hover:bg-zinc-800"
+                    : "bg-gray-100 text-black font-bold hover:bg-gray-200"
                 }`}
               >
                 {item.for_sale ? "✓ For sale" : "Not for sale"}
@@ -209,7 +209,7 @@ export default function CollectionClient({ initialItems }: Props) {
               <button
                 onClick={() => handleRemove(item.id)}
                 disabled={isPending}
-                className="w-full text-xs py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                className="w-full text-xs py-1 font-bold text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-600 mt-0.5"
               >
                 Remove
               </button>

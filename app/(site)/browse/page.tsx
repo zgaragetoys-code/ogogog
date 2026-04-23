@@ -49,7 +49,7 @@ function buildPageUrl(
 
 function PaginationLink({ href, label }: { href: string; label: string }) {
   return (
-    <Link href={href} className="text-sm text-blue-600 hover:underline font-medium">
+    <Link href={href} className="text-sm font-bold border-2 border-black px-4 py-2 hover:bg-black hover:text-white transition-colors">
       {label}
     </Link>
   );
@@ -136,13 +136,13 @@ export default async function BrowsePage({
   const hasFilters = !!(listingType || conditionType || productType);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-black">Browse listings</h1>
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-3 border-b-2 border-black pb-4">
+          <h1 className="text-2xl font-black text-black uppercase tracking-tight">Browse listings</h1>
           <Link
             href="/listings/new"
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="text-sm bg-black text-white px-4 py-2 font-bold hover:bg-zinc-800 transition-colors"
           >
             + New listing
           </Link>
@@ -155,20 +155,20 @@ export default async function BrowsePage({
         </div>
 
         {feed.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-            <p className="text-black mb-2 font-medium">No listings found</p>
+          <div className="text-center py-20 border-2 border-black">
+            <p className="text-black font-bold mb-2">No listings found</p>
             {hasFilters && (
               <p className="text-sm text-gray-500">Try removing some filters.</p>
             )}
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
               {totalRegular} listing{totalRegular !== 1 ? "s" : ""}
-              {hasFilters ? " matching your filters" : ""}
+              {hasFilters ? " — filtered" : ""}
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {feed.map((item, idx) => (
                 <>
                   <ListingCard key={`${item.kind}-${item.data.id}`} item={item} />
@@ -180,15 +180,15 @@ export default async function BrowsePage({
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-3">
+              <div className="mt-10 flex items-center justify-center gap-3">
                 {page > 0 && (
                   <PaginationLink
                     href={buildPageUrl(page - 1, listingType, conditionType, productType)}
-                    label="← Previous"
+                    label="← Prev"
                   />
                 )}
-                <span className="text-sm text-gray-500">
-                  Page {page + 1} of {totalPages}
+                <span className="text-sm font-bold text-black">
+                  {page + 1} / {totalPages}
                 </span>
                 {page < totalPages - 1 && (
                   <PaginationLink

@@ -166,7 +166,7 @@ export default function CollectionImport({ onImported }: Props) {
 
   if (step === "idle") {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="bg-white border-2 border-black p-5">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <p className="text-sm font-semibold text-black">Import from CSV</p>
@@ -175,7 +175,7 @@ export default function CollectionImport({ onImported }: Props) {
             </p>
           </div>
         </div>
-        <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-sm text-black hover:bg-gray-50 transition-colors">
+        <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 border-2 border-black text-sm font-bold text-black hover:bg-gray-100 transition-colors">
           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -196,7 +196,7 @@ export default function CollectionImport({ onImported }: Props) {
 
   if (step === "parsing") {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+      <div className="bg-white border-2 border-black p-5 text-sm text-gray-500">
         Parsing CSV and matching cards…
       </div>
     );
@@ -204,7 +204,7 @@ export default function CollectionImport({ onImported }: Props) {
 
   if (step === "done") {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center justify-between">
+      <div className="bg-white border-2 border-black p-5 flex items-center justify-between">
         <p className="text-sm text-green-800 font-medium">Import complete — {matched} cards added.</p>
         <button
           onClick={() => { setStep("idle"); setRows([]); setSelections({}); if (fileRef.current) fileRef.current.value = ""; }}
@@ -218,8 +218,8 @@ export default function CollectionImport({ onImported }: Props) {
 
   // Preview step
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+    <div className="bg-white border-2 border-black overflow-hidden">
+      <div className="px-5 py-4 border-b-2 border-black flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-black">Review import</p>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -229,14 +229,14 @@ export default function CollectionImport({ onImported }: Props) {
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => { setStep("idle"); setRows([]); if (fileRef.current) fileRef.current.value = ""; }}
-            className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-black"
+            className="text-sm px-3 py-1.5 border-2 border-black hover:bg-gray-100 text-black font-bold"
           >
             Cancel
           </button>
           <button
             onClick={handleImport}
             disabled={isPending || matched === 0}
-            className="text-sm px-4 py-1.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="text-sm px-4 py-1.5 bg-black text-white font-bold hover:bg-zinc-800 disabled:opacity-50"
           >
             {step === "importing" ? "Importing…" : `Import ${matched} cards`}
           </button>
@@ -273,7 +273,7 @@ export default function CollectionImport({ onImported }: Props) {
                   <select
                     value={selected ?? ""}
                     onChange={e => setSelections(prev => ({ ...prev, [i]: e.target.value }))}
-                    className="text-xs border border-gray-300 rounded px-1.5 py-1 max-w-[180px]"
+                    className="text-xs border-2 border-black px-1.5 py-1 max-w-[180px] focus:outline-none"
                   >
                     <option value="">— pick version —</option>
                     {row.candidates.map(c => (

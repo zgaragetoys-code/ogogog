@@ -24,34 +24,32 @@ export default async function FeaturedPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-amber-500 text-lg">✦</span>
-            <h1 className="text-2xl font-bold text-black">Featured listings</h1>
+        <div className="flex items-center justify-between mb-6 border-b-2 border-black pb-4">
+          <div>
+            <h1 className="text-2xl font-black text-black uppercase tracking-tight flex items-center gap-2">
+              <span className="text-yellow-400">✦</span> Featured
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Highlighted listings.{" "}
+              <Link href="/feature-your-listing" className="font-bold text-black hover:underline">
+                Feature yours →
+              </Link>
+            </p>
           </div>
-          <p className="text-sm text-gray-500">
-            These listings are highlighted by their sellers.{" "}
-            <Link href="/feature-your-listing" className="text-blue-600 hover:underline">
-              Feature your own listing →
-            </Link>
-          </p>
         </div>
 
         {items.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-16 text-center">
-            <p className="text-black font-medium mb-1">No featured listings right now</p>
-            <p className="text-sm text-gray-500 mb-4">Be the first to get your listing seen by more collectors.</p>
-            <Link
-              href="/feature-your-listing"
-              className="inline-block text-sm bg-black text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-            >
+          <div className="border-2 border-black p-16 text-center">
+            <p className="text-black font-bold mb-1">No featured listings right now</p>
+            <p className="text-sm text-gray-500 mb-6">Be the first to get your listing seen by more collectors.</p>
+            <Link href="/feature-your-listing" className="inline-block text-sm bg-black text-white px-5 py-2.5 font-bold hover:bg-zinc-800 transition-colors">
               Feature your listing
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {items.map((item) => (
               <ListingCard key={item.data.id} item={item} />
             ))}
