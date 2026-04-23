@@ -15,7 +15,8 @@
     "seed:chat2": "tsx scripts/seed-chat-2.ts",
     "rework:profiles": "tsx scripts/rework-profiles.ts",
     "seed:bots": "tsx scripts/seed-bots.ts",
-    "seed:board": "tsx scripts/seed-board.ts"
+    "seed:board": "tsx scripts/seed-board.ts",
+    "test": "tsx scripts/test-all.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
