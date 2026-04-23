@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { avatarUrl } from "@/lib/avatar";
-import { markAsSold } from "./actions";
+import { markAsSold, cancelListing } from "./actions";
 import {
   PRODUCT_TYPE_LABELS,
   RAW_CONDITION_LABELS,
@@ -150,11 +151,24 @@ function SellerCard({
 
       {isOwner ? (
         listingStatus === "active" && (
-          <form action={markAsSold.bind(null, listingId, isCustom)}>
-            <button type="submit" className="w-full py-2.5 border-2 border-black text-black text-sm font-bold hover:bg-black hover:text-white transition-colors">
-              Mark as sold
-            </button>
-          </form>
+          <div className="space-y-2">
+            <Link
+              href={`/listings/${listingId}/edit`}
+              className="block w-full py-2.5 border-2 border-black text-black text-sm font-bold hover:bg-black hover:text-white transition-colors text-center"
+            >
+              Edit listing
+            </Link>
+            <form action={markAsSold.bind(null, listingId, isCustom)}>
+              <button type="submit" className="w-full py-2.5 border-2 border-black text-black text-sm font-bold hover:bg-black hover:text-white transition-colors">
+                Mark as sold
+              </button>
+            </form>
+            <form action={cancelListing.bind(null, listingId, isCustom)}>
+              <button type="submit" className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-black transition-colors">
+                Cancel listing
+              </button>
+            </form>
+          </div>
         )
       ) : currentUserId ? (
         <Link href={`/messages/${listingId}/${ownerId}`} className="block w-full py-2.5 bg-black text-white text-sm font-bold hover:bg-zinc-800 transition-colors text-center">
@@ -167,6 +181,29 @@ function SellerCard({
       )}
     </div>
   );
+}
+
+// ── Metadata ───────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const [{ data: card }, { data: custom }] = await Promise.all([
+    supabase.from("listings").select("listing_type, price, card:cards(name, set_name)").eq("id", id).maybeSingle(),
+    supabase.from("custom_listings").select("title, listing_type, price").eq("id", id).maybeSingle(),
+  ]);
+
+  const title = card
+    ? `${(card as unknown as { card: { name: string; set_name: string } }).card.name} — ${card.listing_type === "for_sale" ? "For Sale" : "Wanted"} | ogogog`
+    : custom
+    ? `${custom.title} | ogogog`
+    : "Listing | ogogog";
+
+  return { title };
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────

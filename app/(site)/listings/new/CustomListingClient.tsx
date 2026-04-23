@@ -32,12 +32,11 @@ function isValidHttpUrl(url: string): boolean {
 type Errors = Record<string, string>;
 
 const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const labelCls = "block text-sm font-medium text-black mb-1";
+  "w-full px-3 py-2 border-2 border-black text-sm text-black focus:outline-none";
+const labelCls = "block text-xs font-black text-black mb-1 uppercase tracking-widest";
 const errorCls = "text-red-600 text-xs mt-1";
-const sectionCls = "bg-white border border-gray-200 rounded-xl p-6";
-const sectionTitleCls = "text-base font-semibold text-black mb-4";
+const sectionCls = "border-2 border-black p-6";
+const sectionTitleCls = "text-xs font-black text-black mb-4 uppercase tracking-widest";
 
 export default function CustomListingClient() {
   const [listingType, setListingType] = useState<ListingType>("for_sale");
@@ -142,10 +141,10 @@ export default function CustomListingClient() {
               key={type}
               type="button"
               onClick={() => setListingType(type)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+              className={`flex-1 py-2.5 text-sm font-bold border-2 transition-colors ${
                 listingType === type
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-black border-gray-300 hover:bg-gray-50"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-black border-black hover:bg-gray-100"
               }`}
             >
               {type === "for_sale" ? "For Sale" : "Wanted"}
@@ -240,10 +239,10 @@ export default function CustomListingClient() {
               key={type}
               type="button"
               onClick={() => handlePriceTypeChange(type)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+              className={`flex-1 py-2 text-sm font-bold border-2 transition-colors ${
                 priceType === type
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-black border-gray-300 hover:bg-gray-50"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-black border-black hover:bg-gray-100"
               }`}
             >
               {PRICE_TYPE_LABELS[type]}
@@ -309,7 +308,7 @@ export default function CustomListingClient() {
         </p>
 
         {photoLinks.length >= MAX_PHOTO_LINKS && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+          <p className="text-xs font-bold text-black border-2 border-black px-3 py-2 mb-3">
             {photoLinks.length} links added — most listings only need a few.
           </p>
         )}
@@ -343,7 +342,7 @@ export default function CustomListingClient() {
         <button
           type="button"
           onClick={addPhotoLink}
-          className="mt-3 text-sm text-blue-600 hover:underline"
+          className="mt-3 text-sm font-bold text-black hover:underline"
         >
           + Add photo link
         </button>
@@ -372,7 +371,7 @@ export default function CustomListingClient() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+        className="w-full py-3 bg-black text-white font-black text-sm uppercase tracking-widest hover:bg-zinc-800 disabled:opacity-50 transition-colors"
       >
         {submitting ? "Creating listing…" : "Create listing"}
       </button>

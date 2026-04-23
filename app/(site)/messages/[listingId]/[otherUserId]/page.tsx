@@ -64,18 +64,18 @@ export default async function ThreadPage({
   const otherStyle = (otherProfile?.avatar_style ?? "identicon") as AvatarStyle;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-        <Link href="/messages" className="text-sm text-gray-500 hover:text-black shrink-0">
+      <div className="bg-white border-b-2 border-black px-4 py-3 flex items-center gap-3">
+        <Link href="/messages" className="text-sm font-bold text-black hover:underline shrink-0">
           ←
         </Link>
         <img src={avatarUrl(otherStyle, otherSeed)} alt={otherName}
-          className="w-8 h-8 rounded-full shrink-0" />
+          className="keep-round w-8 h-8 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-black truncate">{otherName}</p>
+          <p className="text-sm font-bold text-black truncate">{otherName}</p>
           <Link href={`/listings/${listingId}`}
-            className="text-xs text-blue-600 hover:underline truncate block">
+            className="text-xs font-medium text-black hover:underline truncate block">
             {listingTitle}
           </Link>
         </div>

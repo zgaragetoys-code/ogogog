@@ -36,9 +36,11 @@ function buildPageUrl(
   page: number,
   type: string | null,
   condition: string | null,
-  product: string | null
+  product: string | null,
+  q: string
 ) {
   const p = new URLSearchParams();
+  if (q) p.set("q", q);
   if (type) p.set("type", type);
   if (condition) p.set("condition", condition);
   if (product) p.set("product", product);
@@ -58,10 +60,11 @@ function PaginationLink({ href, label }: { href: string; label: string }) {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; condition?: string; product?: string; page?: string }>;
+  searchParams: Promise<{ type?: string; condition?: string; product?: string; page?: string; q?: string }>;
 }) {
-  const { type, condition, product, page: pageStr } = await searchParams;
+  const { type, condition, product, page: pageStr, q } = await searchParams;
   const page = Math.max(0, parseInt(pageStr ?? "0") || 0);
+  const searchQuery = q?.trim().toLowerCase() ?? "";
 
   const listingType = (type as ListingType) || null;
   const conditionType = (condition as ConditionType) || null;
@@ -109,16 +112,23 @@ export default async function BrowsePage({
 
   // Filter by product type client-side (lives on joined cards table)
   const cardItems: FeedItem[] = ((cardData ?? []) as unknown[])
-    .filter((r) =>
-      productType
-        ? (r as { card: { product_type: string } }).card?.product_type === productType
-        : true
-    )
+    .filter((r) => {
+      const row = r as { card: { product_type: string; name: string } };
+      if (productType && row.card?.product_type !== productType) return false;
+      if (searchQuery && !row.card?.name?.toLowerCase().includes(searchQuery)) return false;
+      return true;
+    })
     .map((r) => ({ kind: "card", data: r } as FeedItem));
 
-  const customItems: FeedItem[] = ((customData ?? []) as unknown[]).map(
-    (r) => ({ kind: "custom", data: r } as FeedItem)
-  );
+  const customItems: FeedItem[] = ((customData ?? []) as unknown[])
+    .filter((r) => {
+      if (searchQuery) {
+        const row = r as { title: string };
+        return row.title?.toLowerCase().includes(searchQuery);
+      }
+      return true;
+    })
+    .map((r) => ({ kind: "custom", data: r } as FeedItem));
 
   const allRegular: FeedItem[] = [...cardItems, ...customItems].sort(
     (a, b) =>
@@ -133,7 +143,7 @@ export default async function BrowsePage({
   const totalPages = Math.ceil(totalRegular / PAGE_SIZE);
   const pageSlice = allRegular.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const feed = buildFeed(pageSlice, featuredItems);
-  const hasFilters = !!(listingType || conditionType || productType);
+  const hasFilters = !!(listingType || conditionType || productType || searchQuery);
 
   return (
     <div className="min-h-screen bg-white">
@@ -183,7 +193,7 @@ export default async function BrowsePage({
               <div className="mt-10 flex items-center justify-center gap-3">
                 {page > 0 && (
                   <PaginationLink
-                    href={buildPageUrl(page - 1, listingType, conditionType, productType)}
+                    href={buildPageUrl(page - 1, listingType, conditionType, productType, searchQuery)}
                     label="← Prev"
                   />
                 )}
@@ -192,7 +202,7 @@ export default async function BrowsePage({
                 </span>
                 {page < totalPages - 1 && (
                   <PaginationLink
-                    href={buildPageUrl(page + 1, listingType, conditionType, productType)}
+                    href={buildPageUrl(page + 1, listingType, conditionType, productType, searchQuery)}
                     label="Next →"
                   />
                 )}

@@ -20,8 +20,8 @@ type Props = {
 };
 
 const SHARED_LINKS: NavLinkDef[] = [
-  { label: "Browse", href: "/browse" },
   { label: "Featured", href: "/featured" },
+  { label: "Browse", href: "/browse" },
 ];
 
 const GUEST_ONLY_LINKS: NavLinkDef[] = [{ label: "How it works", href: "/how-it-works" }];
