@@ -17,7 +17,8 @@ export default async function FeaturedPage() {
     .eq("status", "active")
     .eq("is_featured", true)
     .or(`featured_until.is.null,featured_until.gt.${now}`)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   const items = ((featuredListings ?? []) as unknown as FeedListing[]);
 

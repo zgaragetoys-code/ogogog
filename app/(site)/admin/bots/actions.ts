@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { runBotTick } from "@/lib/bots/tick";
 
 export async function toggleBot(
   botId: string,
@@ -43,21 +44,5 @@ export async function bulkToggleBots(
 }
 
 export async function triggerBotTick(count: number = 8) {
-  const secret = process.env.BOT_TICK_SECRET;
-  if (!secret) return { ok: false, sent: 0, error: "BOT_TICK_SECRET not set" };
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-  const res = await fetch(`${siteUrl}/api/bots/tick`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-bot-secret": secret,
-    },
-    body: JSON.stringify({ count }),
-  });
-
-  if (!res.ok) return { ok: false, sent: 0, error: `HTTP ${res.status}` };
-  const json = await res.json();
-  return json as { ok: boolean; sent: number };
+  return runBotTick(count);
 }
