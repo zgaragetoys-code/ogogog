@@ -225,20 +225,17 @@ RLS: authenticated users manage own rows only. `toggleBookmark()` server action 
 | Project setup (Node, git, Next.js) | ✅ Done |
 | Supabase client wired up | ✅ Done |
 | Auth (signup, login, magic link, signout) | ✅ Done |
-| Database schema (migrations 001–012) | ✅ Done — all run in Supabase |
-| Migration 013 — global chat table | ✅ Done — run in Supabase SQL Editor |
-| Migration 014 — bookmarks table | ✅ Done — run in Supabase SQL Editor |
-| TCGdex card catalog import | ✅ Done — 23,160 cards (`npm run import:tcgdex`) |
-| pokemontcg.io image enrichment | ✅ Done — fills null image_url cards (`npm run enrich:images`) |
+| Database schema (migrations 001–017) | ✅ Done — all run in Supabase |
+| TCGdex card catalog import | ✅ Done — 23,159 cards |
+| pokemontcg.io image enrichment | ✅ Done |
 | TypeScript database types | ✅ Done — types/database.ts |
 | Card search component | ✅ Done — components/CardSearch.tsx |
-| Listing creation — catalog items | ✅ Done — app/listings/new/ |
-| Listing creation — custom items (unified) | ✅ Done — same form, mode toggle |
-| /listings/mine | ✅ Done |
+| Listing creation — catalog + custom items | ✅ Done — app/listings/new/ |
 | Edit/cancel listings | ✅ Done — app/listings/[id]/edit/ |
 | Mark as sold | ✅ Done |
 | Public browse feed (real-time) | ✅ Done — app/browse/ |
 | Listing detail pages | ✅ Done — app/listings/[id]/ |
+| Share button on cards + detail page | ✅ Done — components/ShareButton.tsx |
 | User profiles | ✅ Done — app/u/[username]/ |
 | Messaging (per-listing threads) | ✅ Done — app/messages/ |
 | /featured + /feature-your-listing | ✅ Done |
@@ -248,19 +245,18 @@ RLS: authenticated users manage own rows only. `toggleBookmark()` server action 
 | Community seed users | ✅ Done — `npm run seed:community` |
 | Global chat | ✅ Done — app/chat/, realtime, moderation, cooldown |
 | Bookmarks (listings + users) | ✅ Done — app/bookmarks/, components/BookmarkButton.tsx |
-| Inline bookmark on browse cards | ✅ Done — hover to reveal, no navigation needed |
-| Chat in Messages tab | ✅ Done — indigo banner at top of /messages |
-| Global chat toggle in profile | ✅ Done — edit profile → Global Chat section |
-| Bot system (migration 015) | ⚠️ Migration SQL written — user must run in Supabase SQL Editor |
-| 1000 bot accounts | ⚠️ Script ready — run `npm run seed:bots` AFTER migration 015 |
-| /admin/bots page | ✅ Done — paginated list, per-bot chat/posting toggles, bulk controls |
-| Bot tick cron | ✅ Done — /api/bots/tick (POST=admin, GET=Vercel cron), vercel.json |
-| Discussion board | ⚠️ Migration 016 SQL written — user must run in Supabase SQL Editor |
-| Board UI | ✅ Done — app/board/, realtime, post types, moderation |
-| Site-wide profanity filter | ✅ Done — chat, messages, bio, listing notes, board posts |
-| Condition color coding (browse) | ✅ Done — NM=green, LP=yellow, MP=orange, HP/DMG=red |
-| Relative timestamps (browse) | ✅ Done — "2h ago" style on listing cards |
-| Copy URL on listing detail | ✅ Done — components/CopyButton.tsx |
+| Chat in Messages tab | ✅ Done |
+| Global chat toggle in profile | ✅ Done |
+| Bot system (migration 015) | ✅ Done — 1000 bots seeded |
+| /admin/bots page | ✅ Done — paginated, toggles, bulk controls |
+| Bot tick cron | ✅ Done — /api/bots/tick, daily cron via vercel.json |
+| Discussion board (migration 016) | ✅ Done — app/board/ |
+| Site-wide profanity filter | ✅ Done |
+| Condition color coding (browse) | ✅ Done |
+| Relative timestamps (browse) | ✅ Done |
+| Integration test suite | ✅ Done — `npm run test` (42 tests) |
+| Custom domain | ✅ Done — www.ogogog-marketplace.com (canonical) |
+| Production deployment | ✅ Live — https://www.ogogog-marketplace.com |
 
 ---
 
@@ -278,27 +274,38 @@ RLS: authenticated users manage own rows only. `toggleBookmark()` server action 
 ---
 
 ## Environment Variables
+
+All set in Vercel production dashboard. Local dev uses `.env.local`.
+
 ```
 NEXT_PUBLIC_SUPABASE_URL          — Supabase project URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — Supabase anon/publishable key
-NEXT_PUBLIC_SITE_URL              — e.g. http://localhost:3000
+NEXT_PUBLIC_SITE_URL              — https://www.ogogog-marketplace.com (production) / http://localhost:3000 (local)
 SUPABASE_SERVICE_ROLE_KEY         — Secret, server/script only
-ADMIN_EMAIL                       — Email address that gets /admin access
-BOT_TICK_SECRET                   — Secret for manual admin bot tick trigger (x-bot-secret header)
-CRON_SECRET                       — Secret Vercel uses for cron job authorization (Authorization: Bearer)
+ADMIN_EMAIL                       — zgarage.toys@gmail.com — only this email gets /admin access
+BOT_TICK_SECRET                   — Secret for manual admin bot tick (x-bot-secret header)
+CRON_SECRET                       — Vercel cron authorization (Authorization: Bearer header)
 STRIPE_SECRET_KEY                 — Reserved, not yet used
 STRIPE_PUBLISHABLE_KEY            — Reserved, not yet used
 ```
 
+## Hosting & Domain
+
+- **Production URL**: https://www.ogogog-marketplace.com (canonical)
+- **Apex redirect**: ogogog-marketplace.com → www (308)
+- **Vercel project**: ogogog (zgaragetoys-9952s-projects)
+- **Deploy command**: `npx vercel --prod`
+- **DNS**: Cloudflare (nameservers: mia.ns.cloudflare.com, wesley.ns.cloudflare.com)
+
 ## Bot System
 
-- **Migration 015** (supabase/migrations/015_bots.sql): drops FK on global_chat_messages.user_id, creates bots table, adds bot_id column
-- **Migration 016** (supabase/migrations/016_board.sql): creates board_posts table with RLS and realtime
-- **Seed bots**: `npm run seed:bots` — generates 1000 bots (run AFTER migration 015)
-- **Tick route**: `/api/bots/tick` — POST requires `x-bot-secret` header; GET requires Vercel `Authorization: Bearer ${CRON_SECRET}` header
-- **Cron**: `vercel.json` schedules hourly GET call (requires Vercel Pro; Hobby plan = daily max)
+- **1000 bots seeded** across 7 personalities: casual, hype, vintage, competitive, sealed, grader, investor
+- **Tick route**: `/api/bots/tick` — POST requires `x-bot-secret` header; GET requires `Authorization: Bearer ${CRON_SECRET}`
+- **Tick logic**: `lib/bots/tick.ts` — shared between route and admin server action (no HTTP self-call)
+- **Cron**: `vercel.json` fires daily at noon UTC (Hobby plan limit)
 - **Admin UI**: `/admin/bots` — paginated 50/page, individual toggles, bulk enable/disable N bots
-- **Bot messages**: stored with `bot_id` set; chat resolves display from `bots` table; shown with subtle "bot" label
+- **Manual tick**: `/admin/bots` → "Fire N bots" button triggers immediately
+- **Bot messages**: indistinguishable from real users in chat UI (no bot label)
 
 ---
 
