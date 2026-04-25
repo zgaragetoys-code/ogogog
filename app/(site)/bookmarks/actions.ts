@@ -21,12 +21,20 @@ export async function toggleBookmark(
     .maybeSingle();
 
   if (existing) {
-    await supabase.from("bookmarks").delete().eq("id", existing.id);
+    const { error } = await supabase.from("bookmarks").delete().eq("id", existing.id);
+    if (error) {
+      console.error("toggleBookmark delete:", error.message);
+      return { error: "Failed to remove bookmark." };
+    }
     return { bookmarked: false };
   } else {
-    await supabase
+    const { error } = await supabase
       .from("bookmarks")
       .insert({ user_id: user.id, target_type: targetType, target_id: targetId });
+    if (error) {
+      console.error("toggleBookmark insert:", error.message);
+      return { error: "Failed to save bookmark." };
+    }
     return { bookmarked: true };
   }
 }

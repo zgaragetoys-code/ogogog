@@ -54,15 +54,19 @@ export async function deleteBoardPost(postId: string): Promise<{ error: string }
     .from("board_posts")
     .select("user_id")
     .eq("id", postId)
-    .single();
+    .maybeSingle();
   if (!post) return { error: "Post not found." };
 
   if (post.user_id !== user.id && !isAdmin) return { error: "Not authorized." };
 
-  await admin
+  const { error } = await admin
     .from("board_posts")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", postId);
+  if (error) {
+    console.error("deleteBoardPost:", error.message);
+    return { error: "Failed to delete post." };
+  }
 
   revalidatePath("/board");
 }

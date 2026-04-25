@@ -15,10 +15,7 @@ const inputCls =
 const labelCls = "block text-xs font-black uppercase tracking-widest text-black mb-1";
 const errorCls = "text-red-600 text-xs mt-1 font-bold";
 
-// External prop — allows null so callers don't need a fallback
 type Props = { profile: Profile | null; email: string; isAdmin?: boolean };
-// Internal prop — null already resolved to EMPTY_PROFILE before passing to sub-components
-type InternalProps = { profile: Profile; email: string; isAdmin?: boolean };
 
 const EMPTY_PROFILE: Profile = {
   id: "",
@@ -41,219 +38,10 @@ const EMPTY_PROFILE: Profile = {
   updated_at: new Date().toISOString(),
 };
 
-// ── View mode ──────────────────────────────────────────────────────────────
+export default function ProfileClient({ profile: rawProfile, email, isAdmin }: Props) {
+  const profile = rawProfile ?? EMPTY_PROFILE;
+  const router = useRouter();
 
-function SocialLink({ href, label }: { href: string; label: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-1.5 text-sm font-bold text-black hover:underline"
-    >
-      {label}
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-      </svg>
-    </a>
-  );
-}
-
-function ProfileView({ profile, email, isAdmin, onEdit }: InternalProps & { onEdit: () => void }) {
-  const seed = profile.avatar_seed ?? profile.id;
-  const style = profile.avatar_style ?? "identicon";
-  const displayName = profile.display_name ?? profile.username ?? email;
-
-  const socialLinks = [
-    profile.tcgplayer_url && { href: profile.tcgplayer_url, label: "TCGplayer" },
-    profile.ebay_username && { href: `https://www.ebay.com/usr/${profile.ebay_username}`, label: `eBay: ${profile.ebay_username}` },
-    profile.facebook_url && { href: profile.facebook_url, label: "Facebook" },
-    profile.instagram_url && { href: profile.instagram_url, label: "Instagram" },
-    profile.discord_username && { href: "#", label: `Discord: ${profile.discord_username}` },
-    profile.website_url && { href: profile.website_url, label: "Website" },
-  ].filter(Boolean) as { href: string; label: string }[];
-
-  const location = [profile.region, profile.country ? COUNTRIES.find(c => c.code === profile.country)?.name : null]
-    .filter(Boolean).join(", ");
-
-  const memberSince = new Date(profile.created_at).toLocaleDateString("en-US", {
-    month: "long", year: "numeric",
-  });
-
-  return (
-    <div className="space-y-6">
-      {/* Incomplete profile banner */}
-      {!profile.username && (
-        <div className="bg-yellow-400 border-2 border-black px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm font-bold text-black">Set a username to complete your profile.</p>
-          <button onClick={onEdit} className="text-sm font-black text-black underline shrink-0">
-            Complete now
-          </button>
-        </div>
-      )}
-
-      {/* Avatar + identity */}
-      <div className={`border-2 p-6 flex items-start gap-5 ${isAdmin ? "bg-red-600 border-red-600" : "bg-white border-black"}`}>
-        <img
-          src={avatarUrl(style as AvatarStyle, seed)}
-          alt={displayName}
-          className="keep-round w-20 h-20 shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className={`text-xl font-bold truncate ${isAdmin ? "text-white" : "text-black"}`}>{displayName}</h2>
-            {isAdmin && (
-              <span className="bg-white text-red-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-widest shrink-0">
-                SITE ADMIN
-              </span>
-            )}
-          </div>
-          {profile.username && (
-            <p className={`text-sm ${isAdmin ? "text-red-100" : "text-gray-700"}`}>@{profile.username}</p>
-          )}
-          {location && <p className={`text-sm mt-1 ${isAdmin ? "text-white" : "text-black"}`}>{location}</p>}
-          <p className={`text-xs mt-1 ${isAdmin ? "text-red-100" : "text-gray-700"}`}>Member since {memberSince}</p>
-        </div>
-        <button
-          onClick={onEdit}
-          className={`flex items-center gap-1.5 text-sm border-2 px-3 py-1.5 transition-colors shrink-0 font-bold ${
-            isAdmin
-              ? "border-white text-white hover:bg-white hover:text-red-600"
-              : "border-black text-black hover:bg-black hover:text-white"
-          }`}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-          Edit
-        </button>
-      </div>
-
-      {/* Admin quick-access panel */}
-      {isAdmin && (
-        <div className="bg-red-600 border-2 border-red-600 p-5 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-black text-white uppercase tracking-widest">⚡ Admin panel</p>
-            <p className="text-xs text-red-100 mt-0.5">Feature listings, moderate content, full site control</p>
-          </div>
-          <a
-            href="/admin/featured"
-            className="text-sm bg-white text-red-600 font-black px-4 py-2 hover:bg-red-100 transition-colors shrink-0 uppercase tracking-wide"
-          >
-            Open →
-          </a>
-        </div>
-      )}
-
-      {/* My collection link */}
-      <div className="bg-white border-2 border-black p-5 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-black">My collection</p>
-          <p className="text-xs text-gray-700 mt-0.5">Track what you own and mark cards for sale</p>
-        </div>
-        <Link
-          href="/collection"
-          className="text-sm bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors font-bold shrink-0"
-        >
-          Manage →
-        </Link>
-      </div>
-
-      {/* Bookmarks link */}
-      <div className="bg-white border-2 border-black p-5 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-black">Bookmarks</p>
-          <p className="text-xs text-gray-700 mt-0.5">Saved listings and collectors</p>
-        </div>
-        <Link
-          href="/bookmarks"
-          className="text-sm bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors font-bold shrink-0"
-        >
-          View →
-        </Link>
-      </div>
-
-      {/* Collectr embed */}
-      {profile.collectr_url && (
-        <div className="bg-white border-2 border-black overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b-2 border-black">
-            <p className="text-sm font-semibold text-black">Collectr collection</p>
-            <a
-              href={profile.collectr_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
-            >
-              Open in Collectr
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          </div>
-          <iframe
-            src={profile.collectr_url}
-            className="w-full border-0"
-            style={{ height: 560 }}
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin allow-popups"
-            title="Collectr collection"
-          />
-        </div>
-      )}
-
-      {/* Notes */}
-      {profile.notes && (
-        <div className="bg-white border-2 border-black p-6">
-          <h3 className="text-sm font-semibold text-black mb-2">About</h3>
-          <p className="text-sm text-black whitespace-pre-wrap">{profile.notes}</p>
-        </div>
-      )}
-
-      {/* Social / marketplace links */}
-      {socialLinks.length > 0 && (
-        <div className="bg-white border-2 border-black p-6">
-          <h3 className="text-sm font-semibold text-black mb-3">Links</h3>
-          <div className="space-y-2">
-            {socialLinks.map((l) => (
-              <SocialLink key={l.label} href={l.href} label={l.label} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Public profile link */}
-      {profile.username && (
-        <div className="bg-white border-2 border-black p-4 flex items-center justify-between gap-3">
-          <span className="text-sm text-black truncate">
-            Your public profile: <span className="font-medium">/u/{profile.username}</span>
-          </span>
-          <CopyButton path={`/u/${profile.username}`} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CopyButton({ path }: { path: string }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    await navigator.clipboard.writeText(window.location.origin + path);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-  return (
-    <button onClick={copy} className="text-sm font-bold text-black hover:underline shrink-0 whitespace-nowrap">
-      {copied ? "Copied!" : "Copy link"}
-    </button>
-  );
-}
-
-// ── Edit mode ──────────────────────────────────────────────────────────────
-
-function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & { onCancel: () => void; onSaved: () => void }) {
   const [username, setUsername] = useState(profile.username ?? "");
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(
@@ -317,271 +105,301 @@ function ProfileEditForm({ profile, email, onCancel, onSaved }: InternalProps & 
       setError(result.error);
       setSaving(false);
     } else {
-      onSaved();
+      const savedUsername = username.trim() || profile.username;
+      if (savedUsername) {
+        router.push(`/u/${savedUsername}`);
+      } else {
+        router.refresh();
+      }
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <div className="min-h-screen bg-white">
+      <main className="max-w-2xl mx-auto px-4 py-8">
 
-      {/* Avatar picker */}
-      <div className="bg-white border-2 border-black p-6">
-        <h2 className="text-base font-semibold text-black mb-1">Avatar</h2>
-        <p className="text-xs text-black mb-4">Choose a style — your avatar is generated from your seed.</p>
-
-        <div className="grid grid-cols-5 gap-3 mb-4">
-          {AVATAR_STYLES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setAvatarStyle(s)}
-              className={`flex flex-col items-center gap-1 p-2 border-2 transition-colors ${
-                avatarStyle === s
-                  ? "border-black bg-gray-100"
-                  : "border-gray-300 hover:border-black"
-              }`}
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-black">Edit profile</h1>
+          {profile.username && (
+            <Link
+              href={`/u/${profile.username}`}
+              className="text-sm font-bold text-black hover:underline"
             >
-              <img
-                src={avatarUrl(s, avatarSeed)}
-                alt={s}
-                className="keep-round w-12 h-12"
-              />
-              <span className="text-xs text-black leading-tight text-center">{AVATAR_STYLE_LABELS[s]}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-black">Current seed:</span>
-            <code className="text-xs bg-gray-100 border border-black px-2 py-0.5 font-mono">{avatarSeed}</code>
-          </div>
-          <button
-            type="button"
-            onClick={() => setAvatarSeed(randomSeed())}
-            className="text-xs font-bold text-black hover:underline"
-          >
-            Shuffle seed
-          </button>
-        </div>
-      </div>
-
-      {/* Identity */}
-      <div className="bg-white border-2 border-black p-6 space-y-4">
-        <h2 className="text-base font-semibold text-black">Identity</h2>
-        <div>
-          <label htmlFor="username" className={labelCls}>
-            Username <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-center border-2 border-black focus-within:ring-0">
-            <span className="pl-3 text-sm text-gray-700 select-none">@</span>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="yourname"
-              maxLength={30}
-              className="flex-1 px-2 py-2 text-sm text-black bg-transparent focus:outline-none"
-            />
-          </div>
-          <p className="text-xs text-gray-700 mt-1">3–30 characters. Letters, numbers, underscore, hyphen.</p>
-        </div>
-
-        <div>
-          <label htmlFor="display_name" className={labelCls}>Display name</label>
-          <input
-            id="display_name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="How you appear across the site"
-            maxLength={50}
-            className={inputCls}
-          />
-        </div>
-      </div>
-
-      {/* Location */}
-      <div className="bg-white border-2 border-black p-6 space-y-4">
-        <h2 className="text-base font-semibold text-black">Location</h2>
-
-        {/* Country searchable dropdown */}
-        <div className="relative">
-          <label htmlFor="country_search" className={labelCls}>
-            Country <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="country_search"
-            type="text"
-            value={countrySearch}
-            onChange={(e) => {
-              setCountrySearch(e.target.value);
-              setShowCountryList(true);
-              if (!e.target.value) setCountry("");
-            }}
-            onFocus={() => setShowCountryList(true)}
-            placeholder="Search country…"
-            className={inputCls}
-            autoComplete="off"
-          />
-          {showCountryList && filteredCountries.length > 0 && (
-            <div className="absolute z-10 w-full mt-0 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] max-h-52 overflow-y-auto">
-              {filteredCountries.map((c) => (
-                <button
-                  key={c.code}
-                  type="button"
-                  onMouseDown={() => selectCountry(c.code, c.name)}
-                  className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100 font-medium"
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
+              ← View profile
+            </Link>
           )}
         </div>
 
-        {/* Region */}
-        {country && (
-          <div>
-            <label htmlFor="region" className={labelCls}>
-              {isUS ? "State" : "State / province / region"}{" "}
-              <span className="text-gray-700 font-normal">(optional)</span>
-            </label>
-            {isUS ? (
-              <select
-                id="region"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className={inputCls}
+        {/* Shortcuts */}
+        <div className="flex gap-3 mb-6">
+          <Link
+            href="/collection"
+            className="flex-1 flex items-center justify-between border-2 border-black px-4 py-3 hover:bg-black hover:text-white transition-colors group"
+          >
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest">Edit Collection</p>
+              <p className="text-xs text-gray-700 group-hover:text-white/70 mt-0.5">Add, pin, and manage cards</p>
+            </div>
+            <span className="text-sm font-black">→</span>
+          </Link>
+          <Link
+            href="/listings/mine"
+            className="flex-1 flex items-center justify-between border-2 border-black px-4 py-3 hover:bg-black hover:text-white transition-colors group"
+          >
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest">My Listings</p>
+              <p className="text-xs text-gray-700 group-hover:text-white/70 mt-0.5">View and manage listings</p>
+            </div>
+            <span className="text-sm font-black">→</span>
+          </Link>
+        </div>
+
+        {/* Incomplete profile banner */}
+        {!profile.username && (
+          <div className="bg-yellow-400 border-2 border-black px-4 py-3 mb-6">
+            <p className="text-sm font-bold text-black">Set a username to complete your profile and make it public.</p>
+          </div>
+        )}
+
+        {/* Admin badge */}
+        {isAdmin && (
+          <div className="bg-red-600 border-2 border-red-600 p-4 mb-6 flex items-center justify-between gap-4">
+            <p className="text-sm font-black text-white uppercase tracking-widest">⚡ Admin panel</p>
+            <a
+              href="/admin/featured"
+              className="text-sm bg-white text-red-600 font-black px-4 py-2 hover:bg-red-100 transition-colors shrink-0 uppercase tracking-wide"
+            >
+              Open →
+            </a>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+
+          {/* Avatar picker */}
+          <div className="bg-white border-2 border-black p-6">
+            <h2 className="text-base font-semibold text-black mb-1">Avatar</h2>
+            <p className="text-xs text-black mb-4">Choose a style — your avatar is generated from your seed.</p>
+
+            <div className="grid grid-cols-5 gap-3 mb-4">
+              {AVATAR_STYLES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setAvatarStyle(s)}
+                  className={`flex flex-col items-center gap-1 p-2 border-2 transition-colors ${
+                    avatarStyle === s
+                      ? "border-black bg-gray-100"
+                      : "border-gray-300 hover:border-black"
+                  }`}
+                >
+                  <img
+                    src={avatarUrl(s, avatarSeed)}
+                    alt={s}
+                    className="keep-round w-12 h-12"
+                  />
+                  <span className="text-xs text-black leading-tight text-center">{AVATAR_STYLE_LABELS[s]}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-black">Current seed:</span>
+                <code className="text-xs bg-gray-100 border border-black px-2 py-0.5 font-mono">{avatarSeed}</code>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAvatarSeed(randomSeed())}
+                className="text-xs font-bold text-black hover:underline"
               >
-                <option value="">Select state…</option>
-                {US_STATES.map((s) => (
-                  <option key={s.code} value={s.name}>{s.name}</option>
-                ))}
-              </select>
-            ) : (
+                Shuffle seed
+              </button>
+            </div>
+          </div>
+
+          {/* Identity */}
+          <div className="bg-white border-2 border-black p-6 space-y-4">
+            <h2 className="text-base font-semibold text-black">Identity</h2>
+            <div>
+              <label htmlFor="username" className={labelCls}>
+                Username <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center border-2 border-black focus-within:ring-0">
+                <span className="pl-3 text-sm text-gray-700 select-none">@</span>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="yourname"
+                  maxLength={30}
+                  className="flex-1 px-2 py-2 text-sm text-black bg-transparent focus:outline-none"
+                />
+              </div>
+              <p className="text-xs text-gray-700 mt-1">3–30 characters. Letters, numbers, underscore, hyphen.</p>
+            </div>
+
+            <div>
+              <label htmlFor="display_name" className={labelCls}>Display name</label>
               <input
-                id="region"
+                id="display_name"
                 type="text"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                placeholder="e.g. Ontario, Bayern, Queensland"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="How you appear across the site"
+                maxLength={50}
                 className={inputCls}
               />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="bg-white border-2 border-black p-6 space-y-4">
+            <h2 className="text-base font-semibold text-black">Location</h2>
+
+            <div className="relative">
+              <label htmlFor="country_search" className={labelCls}>
+                Country <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="country_search"
+                type="text"
+                value={countrySearch}
+                onChange={(e) => {
+                  setCountrySearch(e.target.value);
+                  setShowCountryList(true);
+                  if (!e.target.value) setCountry("");
+                }}
+                onFocus={() => setShowCountryList(true)}
+                placeholder="Search country…"
+                className={inputCls}
+                autoComplete="off"
+              />
+              {showCountryList && filteredCountries.length > 0 && (
+                <div className="absolute z-10 w-full mt-0 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] max-h-52 overflow-y-auto">
+                  {filteredCountries.map((c) => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onMouseDown={() => selectCountry(c.code, c.name)}
+                      className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100 font-medium"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {country && (
+              <div>
+                <label htmlFor="region" className={labelCls}>
+                  {isUS ? "State" : "State / province / region"}{" "}
+                  <span className="text-gray-700 font-normal">(optional)</span>
+                </label>
+                {isUS ? (
+                  <select
+                    id="region"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">Select state…</option>
+                    {US_STATES.map((s) => (
+                      <option key={s.code} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="region"
+                    type="text"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    placeholder="e.g. Ontario, Bayern, Queensland"
+                    className={inputCls}
+                  />
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* About */}
-      <div className="bg-white border-2 border-black p-6">
-        <h2 className="text-base font-semibold text-black mb-1">About</h2>
-        <p className="text-xs text-black mb-3">Collecting focus, trading preferences, anything you want buyers/sellers to know.</p>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Focusing on Base Set and Jungle. I only trade within the US. Quick shipper."
-          rows={4}
-          maxLength={2000}
-          className={`${inputCls} resize-y`}
-        />
-        <p className="text-xs text-black mt-1 text-right">{notes.length}/2000</p>
-      </div>
-
-      {/* Social + marketplace links */}
-      <div className="bg-white border-2 border-black p-6 space-y-4">
-        <h2 className="text-base font-semibold text-black">Links <span className="font-normal text-sm text-gray-700">(all optional)</span></h2>
-        {[
-          { id: "collectr_url",   label: "Collectr URL",      value: collectrUrl,      set: setCollectrUrl,      ph: "https://collectr.io/yourname" },
-          { id: "tcgplayer_url",  label: "TCGplayer URL",     value: tcgplayerUrl,     set: setTcgplayerUrl,     ph: "https://www.tcgplayer.com/store/..." },
-          { id: "ebay_username",  label: "eBay username",     value: ebayUsername,     set: setEbayUsername,     ph: "your_ebay_username" },
-          { id: "facebook_url",   label: "Facebook URL",      value: facebookUrl,      set: setFacebookUrl,      ph: "https://facebook.com/yourprofile" },
-          { id: "instagram_url",  label: "Instagram URL",     value: instagramUrl,     set: setInstagramUrl,     ph: "https://instagram.com/yourhandle" },
-          { id: "discord_username", label: "Discord username", value: discordUsername, set: setDiscordUsername,  ph: "yourname or yourname#1234" },
-          { id: "website_url",    label: "Website",           value: websiteUrl,       set: setWebsiteUrl,       ph: "https://yoursite.com" },
-        ].map(({ id, label, value, set, ph }) => (
-          <div key={id}>
-            <label htmlFor={id} className={labelCls}>{label}</label>
-            <input id={id} type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={inputCls} />
-          </div>
-        ))}
-      </div>
-
-      {/* Global chat */}
-      <div className="bg-white border-2 border-black p-6">
-        <h2 className="text-base font-semibold text-black mb-1">Global Chat</h2>
-        <p className="text-xs text-gray-700 mb-4">The community chat shown under the Messages tab.</p>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div
-            onClick={() => setGlobalChatEnabled((v) => !v)}
-            className={`relative w-11 h-6 border-2 border-black transition-colors shrink-0 cursor-pointer ${
-              globalChatEnabled ? "bg-black" : "bg-white"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white border border-black transition-transform ${
-                globalChatEnabled ? "translate-x-5 bg-white" : "translate-x-0 bg-gray-300"
-              }`}
+          {/* About */}
+          <div className="bg-white border-2 border-black p-6">
+            <h2 className="text-base font-semibold text-black mb-1">About</h2>
+            <p className="text-xs text-black mb-3">Collecting focus, trading preferences, anything you want buyers/sellers to know.</p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. Focusing on Base Set and Jungle. I only trade within the US. Quick shipper."
+              rows={4}
+              maxLength={2000}
+              className={`${inputCls} resize-y`}
             />
+            <p className="text-xs text-black mt-1 text-right">{notes.length}/2000</p>
           </div>
-          <span className="text-sm font-medium text-black">
-            {globalChatEnabled ? "Enabled — you can send and receive messages" : "Disabled — chat is hidden"}
-          </span>
-        </label>
-      </div>
 
-      {error && <p className={errorCls + " text-sm text-center"}>{error}</p>}
+          {/* Social + marketplace links */}
+          <div className="bg-white border-2 border-black p-6 space-y-4">
+            <h2 className="text-base font-semibold text-black">Links <span className="font-normal text-sm text-gray-700">(all optional)</span></h2>
+            {[
+              { id: "collectr_url",     label: "Collectr URL",      value: collectrUrl,      set: setCollectrUrl,      ph: "https://collectr.io/yourname" },
+              { id: "tcgplayer_url",    label: "TCGplayer URL",     value: tcgplayerUrl,     set: setTcgplayerUrl,     ph: "https://www.tcgplayer.com/store/..." },
+              { id: "ebay_username",    label: "eBay username",     value: ebayUsername,     set: setEbayUsername,     ph: "your_ebay_username" },
+              { id: "facebook_url",     label: "Facebook URL",      value: facebookUrl,      set: setFacebookUrl,      ph: "https://facebook.com/yourprofile" },
+              { id: "instagram_url",    label: "Instagram URL",     value: instagramUrl,     set: setInstagramUrl,     ph: "https://instagram.com/yourhandle" },
+              { id: "discord_username", label: "Discord username",  value: discordUsername,  set: setDiscordUsername,  ph: "yourname or yourname#1234" },
+              { id: "website_url",      label: "Website",           value: websiteUrl,       set: setWebsiteUrl,       ph: "https://yoursite.com" },
+            ].map(({ id, label, value, set, ph }) => (
+              <div key={id}>
+                <label htmlFor={id} className={labelCls}>{label}</label>
+                <input id={id} type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={inputCls} />
+              </div>
+            ))}
+          </div>
 
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-3 border-2 border-black text-black text-sm font-bold hover:bg-gray-100 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 py-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white font-bold transition-colors"
-        >
-          {saving ? "Saving…" : "Save profile"}
-        </button>
-      </div>
-    </form>
-  );
-}
+          {/* Global chat */}
+          <div className="bg-white border-2 border-black p-6">
+            <h2 className="text-base font-semibold text-black mb-1">Global Chat</h2>
+            <p className="text-xs text-gray-700 mb-4">The community chat shown under the Messages tab.</p>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div
+                onClick={() => setGlobalChatEnabled((v) => !v)}
+                className={`relative w-11 h-6 border-2 border-black transition-colors shrink-0 cursor-pointer ${
+                  globalChatEnabled ? "bg-black" : "bg-white"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white border border-black transition-transform ${
+                    globalChatEnabled ? "translate-x-5 bg-white" : "translate-x-0 bg-gray-300"
+                  }`}
+                />
+              </div>
+              <span className="text-sm font-medium text-black">
+                {globalChatEnabled ? "Enabled — you can send and receive messages" : "Disabled — chat is hidden"}
+              </span>
+            </label>
+          </div>
 
-// ── Main export ────────────────────────────────────────────────────────────
+          {error && <p className={errorCls + " text-sm text-center"}>{error}</p>}
 
-export default function ProfileClient({ profile: rawProfile, email, isAdmin }: Props) {
-  const profile = rawProfile ?? EMPTY_PROFILE;
-  const [mode, setMode] = useState<"view" | "edit">("view");
-  const router = useRouter();
-
-  return (
-    <div className="min-h-screen bg-white">
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-black mb-6">
-          {mode === "edit" ? "Edit profile" : "My profile"}
-        </h1>
-
-        {mode === "view" ? (
-          <ProfileView
-            profile={profile}
-            email={email}
-            isAdmin={isAdmin}
-            onEdit={() => setMode("edit")}
-          />
-        ) : (
-          <ProfileEditForm
-            profile={profile}
-            email={email}
-            onCancel={() => setMode("view")}
-            onSaved={() => { setMode("view"); router.refresh(); }}
-          />
-        )}
+          <div className="flex gap-3">
+            <Link
+              href={profile.username ? `/u/${profile.username}` : "/browse"}
+              className="flex-1 py-3 border-2 border-black text-black text-sm font-bold hover:bg-gray-100 transition-colors text-center"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 py-3 bg-black hover:bg-zinc-800 disabled:opacity-50 text-white font-bold transition-colors"
+            >
+              {saving ? "Saving…" : "Save profile"}
+            </button>
+          </div>
+        </form>
       </main>
     </div>
   );

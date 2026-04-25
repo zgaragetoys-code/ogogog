@@ -160,39 +160,47 @@ export default async function MessagesPage() {
             <p className="text-sm text-gray-700">Use the search above to start a conversation.</p>
           </div>
         ) : (
-          <div className="divide-y-2 divide-black border-t-2 border-b-2 border-black">
+          <div className="border-t-2 border-b-2 border-black">
             {threads.map((thread) => {
               const profile = profileMap.get(thread.otherUserId);
               const name = profile?.display_name ?? profile?.username ?? "User";
               const seed = profile?.avatar_seed ?? thread.otherUserId;
               const style = (profile?.avatar_style ?? "identicon") as AvatarStyle;
-              const subtitle = thread.isDirect
-                ? "General chat"
-                : (listingMap.get(thread.listingId!)?.title ?? "Listing");
+              const listingTitle = thread.isDirect ? null : (listingMap.get(thread.listingId!)?.title ?? "Listing");
               return (
-                <Link
-                  key={thread.key}
-                  href={thread.href}
-                  className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <img src={avatarUrl(style, seed)} alt={name} className="keep-round w-10 h-10 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-black truncate">{name}</p>
-                      {thread.isDirect && (
-                        <span className="text-[10px] font-black border border-black px-1.5 py-0.5 uppercase shrink-0">Chat</span>
+                <div key={thread.key} className="flex items-center border-b-2 border-black last:border-b-0 hover:bg-gray-50 transition-colors">
+                  <Link href={thread.href} className="flex items-center gap-3 p-4 flex-1 min-w-0">
+                    <img src={avatarUrl(style, seed)} alt={name} className="keep-round w-10 h-10 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-black truncate">{name}</p>
+                        {thread.isDirect && (
+                          <span className="text-[10px] font-black border border-black px-1.5 py-0.5 uppercase shrink-0">Chat</span>
+                        )}
+                        {thread.unreadCount > 0 && (
+                          <span className="keep-round bg-black text-white text-xs font-black px-1.5 py-0.5 shrink-0">
+                            {thread.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      {listingTitle && (
+                        <p className="text-xs font-medium text-gray-700 truncate">Re: {listingTitle}</p>
                       )}
-                      {thread.unreadCount > 0 && (
-                        <span className="keep-round bg-black text-white text-xs font-black px-1.5 py-0.5 shrink-0">
-                          {thread.unreadCount}
-                        </span>
-                      )}
+                      <p className="text-xs text-gray-700 truncate mt-0.5">{thread.lastMessage.content}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-700 truncate">{subtitle}</p>
-                    <p className="text-xs text-gray-700 truncate mt-0.5">{thread.lastMessage.content}</p>
+                  </Link>
+                  <div className="flex flex-col items-end gap-2 px-4 shrink-0">
+                    <span className="text-xs font-bold text-gray-700">{timeAgo(thread.lastMessage.created_at)}</span>
+                    {thread.listingId && (
+                      <Link
+                        href={`/listings/${thread.listingId}`}
+                        className="text-[10px] font-black uppercase tracking-widest border border-black px-2 py-0.5 hover:bg-black hover:text-white transition-colors"
+                      >
+                        View listing
+                      </Link>
+                    )}
                   </div>
-                  <span className="text-xs font-bold text-gray-700 shrink-0">{timeAgo(thread.lastMessage.created_at)}</span>
-                </Link>
+                </div>
               );
             })}
           </div>

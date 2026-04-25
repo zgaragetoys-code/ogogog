@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkProfanity } from "@/lib/moderation";
 import {
@@ -200,5 +201,7 @@ export async function updateListing(
     return { error: "Failed to save changes." };
   }
 
+  revalidatePath(`/listings/${listingId}`);
+  revalidatePath("/browse");
   redirect(`/listings/${listingId}`);
 }

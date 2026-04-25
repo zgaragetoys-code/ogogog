@@ -19,7 +19,7 @@ export async function sendChatMessage(
     .from("profiles")
     .select("global_chat_enabled")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
   if (!profile?.global_chat_enabled)
     return { error: "Global chat is disabled in your settings." };
 
@@ -61,17 +61,21 @@ export async function deleteChatMessage(
     .from("global_chat_messages")
     .select("user_id, bot_id")
     .eq("id", messageId)
-    .single();
+    .maybeSingle();
   if (!msg) return { error: "Message not found." };
 
   const isOwner = msg.user_id === user.id;
   if (!isOwner && !isAdmin) return { error: "Not authorized." };
 
-  await admin
+  const { error } = await admin
     .from("global_chat_messages")
     .update({
       deleted_at: new Date().toISOString(),
       deleted_by: user.id,
     })
     .eq("id", messageId);
+  if (error) {
+    console.error("deleteChatMessage:", error.message);
+    return { error: "Failed to delete message." };
+  }
 }

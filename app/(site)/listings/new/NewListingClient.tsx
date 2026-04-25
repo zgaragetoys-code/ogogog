@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import CardSearch from "@/components/CardSearch";
 import { createListing } from "./actions";
 import {
@@ -51,11 +52,18 @@ const errorCls = "text-red-600 text-xs mt-1";
 const sectionCls = "border-2 border-black p-6";
 const sectionTitleCls = "text-xs font-black text-black mb-4 uppercase tracking-widest";
 
-export default function NewListingClient() {
+export default function NewListingClient({ initialCardId }: { initialCardId?: string }) {
   const [mode, setMode] = useState<Mode>("catalog");
 
   // Catalog-mode state
   const [card, setCard] = useState<Card | null>(null);
+
+  useEffect(() => {
+    if (!initialCardId) return;
+    const sb = createClient();
+    sb.from("cards").select("id, name, set_name, card_number, image_url, product_type").eq("id", initialCardId).single()
+      .then(({ data }) => { if (data) setCard(data as Card); });
+  }, [initialCardId]);
 
   // Custom-mode state
   const [title, setTitle] = useState("");
@@ -125,7 +133,7 @@ export default function NewListingClient() {
     }
 
     if (!isCustomMode) {
-      if (conditionType === "raw" && !rawCondition) errs.rawCondition = "Please select a condition grade.";
+      // rawCondition blank means "any grade" — valid
       if (conditionType === "sealed" && !sealedCondition) errs.sealedCondition = "Please select a sealed condition.";
       if (conditionType === "graded") {
         if (!gradingCompany) errs.gradingCompany = "Please select a grading company.";
@@ -286,10 +294,7 @@ export default function NewListingClient() {
         <div className="flex gap-3">
           {(["for_sale", "wanted"] as const).map((type) => (
             <button key={type} type="button"
-              onClick={() => {
-                setListingType(type);
-                if (type === "for_sale" && conditionType === "any") resetCondition("raw");
-              }}
+              onClick={() => setListingType(type)}
               className={`flex-1 py-2.5 text-sm font-bold border-2 transition-colors ${listingType === type ? "bg-black text-white border-black" : "bg-white text-black border-black hover:bg-gray-100"}`}>
               {type === "for_sale" ? "For Sale" : "Wanted"}
             </button>
@@ -325,7 +330,7 @@ export default function NewListingClient() {
           // Catalog items use the full condition system
           <>
             <div className="flex flex-wrap gap-3 mb-5">
-              {(["raw", "graded", ...(cardIsSealed ? ["sealed"] : []), ...(listingType === "wanted" ? ["any"] : [])] as (ConditionType | "any")[]).map(
+              {(["raw", "graded", ...(cardIsSealed ? ["sealed"] : []), "any"] as (ConditionType | "any")[]).map(
                 (type) => (
                   <button key={type} type="button" onClick={() => resetCondition(type)}
                     className={`px-5 py-2 text-sm font-bold border-2 transition-colors ${conditionType === type ? "bg-black text-white border-black" : "bg-white text-black border-black hover:bg-gray-100"}`}>
@@ -339,7 +344,7 @@ export default function NewListingClient() {
               <div>
                 <label htmlFor="raw_condition" className={labelCls}>Condition grade</label>
                 <select id="raw_condition" value={rawCondition} onChange={(e) => setRawCondition(e.target.value as RawCondition)} className={inputCls}>
-                  <option value="">Select grade…</option>
+                  <option value="">Any grade</option>
                   {RAW_CONDITIONS.map((c) => <option key={c} value={c}>{RAW_CONDITION_LABELS[c]}</option>)}
                 </select>
                 {errors.rawCondition && <p className={errorCls}>{errors.rawCondition}</p>}

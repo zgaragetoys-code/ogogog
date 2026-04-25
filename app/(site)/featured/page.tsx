@@ -4,7 +4,18 @@ import ListingCard, { type FeedListing } from "@/app/(site)/browse/ListingCard";
 
 export default async function FeaturedPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const now = new Date().toISOString();
+
+  let bookmarkedIds = new Set<string>();
+  if (user) {
+    const { data: bms } = await supabase
+      .from("bookmarks")
+      .select("target_id")
+      .eq("user_id", user.id)
+      .eq("target_type", "listing");
+    bookmarkedIds = new Set((bms ?? []).map((b) => b.target_id));
+  }
 
   const { data: featuredListings } = await supabase
     .from("listings")
@@ -50,7 +61,7 @@ export default async function FeaturedPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {items.map((item) => (
-              <ListingCard key={item.id} item={item} />
+              <ListingCard key={item.id} item={item} currentUserId={user?.id} isBookmarked={bookmarkedIds.has(item.id)} />
             ))}
           </div>
         )}

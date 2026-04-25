@@ -21,8 +21,8 @@ type Props = {
 };
 
 const SHARED_LINKS: NavLinkDef[] = [
-  { label: "Featured", href: "/featured" },
   { label: "Browse", href: "/browse" },
+  { label: "Featured", href: "/featured" },
   { label: "Board", href: "/board" },
 ];
 
@@ -89,7 +89,7 @@ export default function NavBar({ user, unreadCount, isAdmin }: Props) {
 
   const userLinks: NavLinkDef[] = [
     ...SHARED_LINKS,
-    { label: "My Listings", href: "/listings/mine" },
+    { label: "Collection", href: "/collection" },
     { label: "Messages", href: "/messages", badge: unreadCount || undefined },
   ];
   const guestLinks = [...SHARED_LINKS, ...GUEST_ONLY_LINKS];
@@ -100,7 +100,7 @@ export default function NavBar({ user, unreadCount, isAdmin }: Props) {
     : null;
 
   return (
-    <nav className="bg-white border-b-2 border-black">
+    <nav className="sticky top-0 z-50 bg-white border-b-2 border-black">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-8">
 
         {/* Logo */}
@@ -160,11 +160,18 @@ export default function NavBar({ user, unreadCount, isAdmin }: Props) {
                     <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                     <div className="absolute right-0 mt-0 w-52 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] py-1 z-50">
                       <Link
-                        href="/profile"
+                        href={user.username ? `/u/${user.username}` : "/profile"}
                         className="block px-4 py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white transition-colors"
                         onClick={() => setProfileOpen(false)}
                       >
                         Profile
+                      </Link>
+                      <Link
+                        href="/listings/mine"
+                        className="block px-4 py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white transition-colors"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        My Listings
                       </Link>
                       <Link
                         href="/collection"
@@ -275,7 +282,8 @@ export default function NavBar({ user, unreadCount, isAdmin }: Props) {
                   <span className="text-sm font-bold text-black truncate">{displayLabel}</span>
                 </div>
               )}
-              <Link href="/profile" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Profile</Link>
+              <Link href={user.username ? `/u/${user.username}` : "/profile"} className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Profile</Link>
+              <Link href="/listings/mine" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>My Listings</Link>
               <Link href="/collection" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>My Collection</Link>
               <Link href="/bookmarks" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Bookmarks</Link>
               <Link href="/feature-your-listing" className="flex py-2.5 text-sm font-medium border-b border-black/10" onClick={() => setMenuOpen(false)}>Feature a listing</Link>

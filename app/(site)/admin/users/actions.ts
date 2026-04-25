@@ -14,7 +14,8 @@ async function assertAdmin() {
 export async function deleteUserListing(listingId: string) {
   await assertAdmin();
   const admin = createAdminClient();
-  await admin.from("listings").delete().eq("id", listingId);
+  const { error } = await admin.from("listings").delete().eq("id", listingId);
+  if (error) throw new Error(`deleteUserListing: ${error.message}`);
   revalidatePath("/admin/users");
   revalidatePath("/browse");
 }
@@ -22,7 +23,8 @@ export async function deleteUserListing(listingId: string) {
 export async function cancelUserListing(listingId: string) {
   await assertAdmin();
   const admin = createAdminClient();
-  await admin.from("listings").update({ status: "cancelled" }).eq("id", listingId);
+  const { error } = await admin.from("listings").update({ status: "cancelled" }).eq("id", listingId);
+  if (error) throw new Error(`cancelUserListing: ${error.message}`);
   revalidatePath("/admin/users");
   revalidatePath("/browse");
 }
@@ -30,6 +32,7 @@ export async function cancelUserListing(listingId: string) {
 export async function deleteUserAccount(userId: string) {
   await assertAdmin();
   const admin = createAdminClient();
-  await admin.auth.admin.deleteUser(userId);
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(`deleteUserAccount: ${error.message}`);
   revalidatePath("/admin/users");
 }

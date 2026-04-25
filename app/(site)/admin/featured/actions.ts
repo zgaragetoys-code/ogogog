@@ -15,7 +15,8 @@ async function assertAdmin() {
 export async function cancelAnyListing(listingId: string) {
   await assertAdmin();
   const admin = createAdminClient();
-  await admin.from("listings").update({ status: "cancelled" }).eq("id", listingId);
+  const { error } = await admin.from("listings").update({ status: "cancelled" }).eq("id", listingId);
+  if (error) throw new Error(`cancelAnyListing: ${error.message}`);
   revalidatePath("/admin/featured");
   revalidatePath("/browse");
   revalidatePath("/featured");
@@ -24,7 +25,8 @@ export async function cancelAnyListing(listingId: string) {
 export async function deleteAnyListing(listingId: string) {
   await assertAdmin();
   const admin = createAdminClient();
-  await admin.from("listings").delete().eq("id", listingId);
+  const { error } = await admin.from("listings").delete().eq("id", listingId);
+  if (error) throw new Error(`deleteAnyListing: ${error.message}`);
   revalidatePath("/admin/featured");
   revalidatePath("/browse");
   revalidatePath("/featured");
@@ -35,14 +37,16 @@ export async function toggleFeatured(
   featured: boolean,
   featuredUntil: string | null
 ) {
-  const supabase = await assertAdmin();
-  await supabase
+  await assertAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("listings")
     .update({
       is_featured: featured,
       featured_until: featured && featuredUntil ? new Date(featuredUntil).toISOString() : null,
     })
     .eq("id", listingId);
+  if (error) throw new Error(`toggleFeatured: ${error.message}`);
   revalidatePath("/admin/featured");
   revalidatePath("/browse");
   revalidatePath("/featured");

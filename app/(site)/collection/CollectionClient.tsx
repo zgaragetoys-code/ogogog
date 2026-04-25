@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import CardSearch from "@/components/CardSearch";
 import CollectionImport from "./CollectionImport";
-import { addToCollection, removeFromCollection, updateCollectionItem } from "./actions";
+import { addToCollection, removeFromCollection, updateCollectionItem, togglePinned } from "./actions";
 import {
   RAW_CONDITIONS,
   SEALED_CONDITIONS,
@@ -25,6 +26,7 @@ type CollectionItem = {
   card_id: string;
   quantity: number;
   for_sale: boolean;
+  pinned: boolean;
   condition_type: ConditionType | null;
   raw_condition: RawCondition | null;
   grading_company: GradingCompany | null;
@@ -102,9 +104,10 @@ export default function CollectionClient({ initialItems }: Props) {
 
     const existing = items.find((i) => i.card_id === selectedCard.id);
     const newQty = existing ? existing.quantity + quantity : quantity;
+    const cardSnapshot = selectedCard;
 
     startTransition(async () => {
-      await addToCollection(selectedCard.id, newQty, {
+      const result = await addToCollection(cardSnapshot.id, newQty, {
         condition_type: conditionType || null,
         raw_condition: conditionType === "raw" ? (rawCondition || null) : null,
         grading_company: conditionType === "graded" ? (gradingCompany || null) : null,
@@ -112,27 +115,35 @@ export default function CollectionClient({ initialItems }: Props) {
         notes: notes.trim() || null,
       });
 
+      if ("error" in result) {
+        setFormError(result.error);
+        return;
+      }
+
       if (existing) {
         setItems((prev) =>
-          prev.map((i) => i.card_id === selectedCard.id ? { ...i, quantity: newQty } : i)
+          prev.map((i) => i.card_id === cardSnapshot.id ? { ...i, quantity: newQty } : i)
         );
       } else {
+        // Use the real DB id returned by the server action — NOT a client-generated UUID.
+        // A fake UUID here would break subsequent remove/update calls.
         setItems((prev) => [{
-          id: crypto.randomUUID(),
-          card_id: selectedCard.id,
+          id: result.id,
+          card_id: cardSnapshot.id,
           quantity: newQty,
           for_sale: false,
+          pinned: false,
           condition_type: conditionType,
           raw_condition: conditionType === "raw" ? (rawCondition || null) : null,
           grading_company: conditionType === "graded" ? (gradingCompany || null) : null,
           grade: conditionType === "graded" && grade ? parseFloat(grade) : null,
           notes: notes.trim() || null,
           card: {
-            name: selectedCard.name,
-            set_name: selectedCard.set_name,
-            card_number: selectedCard.card_number,
-            image_url: selectedCard.image_url,
-            product_type: selectedCard.product_type,
+            name: cardSnapshot.name,
+            set_name: cardSnapshot.set_name,
+            card_number: cardSnapshot.card_number,
+            image_url: cardSnapshot.image_url,
+            product_type: cardSnapshot.product_type,
           },
         }, ...prev]);
       }
@@ -142,14 +153,16 @@ export default function CollectionClient({ initialItems }: Props) {
 
   function handleRemove(itemId: string) {
     startTransition(async () => {
-      await removeFromCollection(itemId);
+      const result = await removeFromCollection(itemId);
+      if (result?.error) return;
       setItems((prev) => prev.filter((i) => i.id !== itemId));
     });
   }
 
   function handleToggleForSale(item: CollectionItem) {
     startTransition(async () => {
-      await updateCollectionItem(item.id, { for_sale: !item.for_sale });
+      const result = await updateCollectionItem(item.id, { for_sale: !item.for_sale });
+      if (result?.error) return;
       setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, for_sale: !i.for_sale } : i));
     });
   }
@@ -157,8 +170,17 @@ export default function CollectionClient({ initialItems }: Props) {
   function handleQuantityChange(item: CollectionItem, qty: number) {
     if (qty < 1) return;
     startTransition(async () => {
-      await updateCollectionItem(item.id, { quantity: qty });
+      const result = await updateCollectionItem(item.id, { quantity: qty });
+      if (result?.error) return;
       setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, quantity: qty } : i));
+    });
+  }
+
+  function handleTogglePinned(item: CollectionItem) {
+    startTransition(async () => {
+      const result = await togglePinned(item.id, !item.pinned, pinnedCount);
+      if (result?.error) { setFormError(result.error); return; }
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, pinned: !i.pinned } : i));
     });
   }
 
@@ -168,6 +190,7 @@ export default function CollectionClient({ initialItems }: Props) {
 
   const forSaleCount = items.filter((i) => i.for_sale).length;
   const totalCopies = items.reduce((s, i) => s + i.quantity, 0);
+  const pinnedCount = items.filter((i) => i.pinned).length;
 
   return (
     <div className="space-y-6">
@@ -350,6 +373,27 @@ export default function CollectionClient({ initialItems }: Props) {
                   }`}>
                   {item.for_sale ? "✓ For sale" : "Not for sale"}
                 </button>
+
+                {/* Pin to profile */}
+                <button
+                  onClick={() => handleTogglePinned(item)}
+                  disabled={isPending || (!item.pinned && pinnedCount >= 6)}
+                  className={`w-full text-xs py-1.5 font-black uppercase tracking-widest transition-colors border-2 disabled:opacity-40 ${
+                    item.pinned
+                      ? "bg-amber-400 text-black border-amber-400 hover:bg-amber-300"
+                      : "bg-white text-black border-black hover:bg-gray-100"
+                  }`}
+                >
+                  {item.pinned ? `★ Profile (${pinnedCount}/6)` : `Display this (${pinnedCount}/6)`}
+                </button>
+
+                {/* Create listing shortcut */}
+                <Link
+                  href={`/listings/new?card_id=${item.card_id}&from=collection`}
+                  className="w-full text-xs py-1.5 font-black uppercase tracking-widest text-center border-2 border-black bg-white hover:bg-black hover:text-white transition-colors block"
+                >
+                  List this →
+                </Link>
 
                 {/* Remove */}
                 <button onClick={() => handleRemove(item.id)} disabled={isPending}

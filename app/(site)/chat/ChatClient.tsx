@@ -87,7 +87,11 @@ function MessageRow({
       />
       <div className={`flex-1 min-w-0 ${isMine ? "items-end" : "items-start"} flex flex-col`}>
         <div className={`flex items-baseline gap-2 mb-0.5 ${isMine ? "flex-row-reverse" : ""}`}>
-          <span className="text-xs font-bold text-black">{name}</span>
+          {msg.profile?.username ? (
+            <a href={`/u/${msg.profile.username}`} className="text-xs font-bold text-black hover:underline">{name}</a>
+          ) : (
+            <span className="text-xs font-bold text-black">{name}</span>
+          )}
           <span className="text-[10px] text-gray-700">{timeLabel(msg.created_at)}</span>
         </div>
         <div className={`flex items-center gap-1.5 ${isMine ? "flex-row-reverse" : ""}`}>
@@ -156,19 +160,18 @@ export default function ChatClient({
           let profile: ChatProfile | null = null;
 
           if (newMsg.bot_id) {
-            // Bots table is publicly readable
             const { data } = await supabase
               .from("bots")
               .select("username, display_name, avatar_seed, avatar_style")
               .eq("id", newMsg.bot_id)
-              .single();
+              .maybeSingle();
             profile = data as ChatProfile | null;
           } else {
             const { data } = await supabase
               .from("profiles")
               .select("username, display_name, avatar_seed, avatar_style")
               .eq("id", newMsg.user_id)
-              .single();
+              .maybeSingle();
             profile = data as ChatProfile | null;
           }
 

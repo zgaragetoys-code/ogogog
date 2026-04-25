@@ -16,7 +16,7 @@ export function BulkButton({
   return (
     <button
       type="submit"
-      formAction={formAction as string}
+      formAction={formAction as never}
       disabled={pending}
       className={`text-xs px-3 py-1.5 font-bold transition-colors disabled:opacity-40 ${
         variant === "solid"

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function markAsSold(listingId: string) {
@@ -19,6 +20,9 @@ export async function markAsSold(listingId: string) {
     return;
   }
 
+  revalidatePath("/browse");
+  revalidatePath(`/listings/${listingId}`);
+  revalidatePath("/listings/mine");
   redirect(`/listings/mine`);
 }
 
@@ -38,5 +42,8 @@ export async function cancelListing(listingId: string) {
     return;
   }
 
+  revalidatePath("/browse");
+  revalidatePath(`/listings/${listingId}`);
+  revalidatePath("/listings/mine");
   redirect(`/listings/mine`);
 }

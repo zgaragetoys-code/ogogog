@@ -14,7 +14,7 @@ export default function CopyProfileUrl({ username }: { username: string }) {
   return (
     <button
       onClick={copy}
-      className="text-sm text-blue-600 hover:underline whitespace-nowrap"
+      className="flex-1 py-2.5 text-xs font-black uppercase tracking-widest text-center hover:bg-black hover:text-white transition-colors"
     >
       {copied ? "Copied!" : "Share profile"}
     </button>

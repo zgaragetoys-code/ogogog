@@ -7,11 +7,21 @@ function getClient() {
   );
 }
 
-function rand<T>(arr: T[]): T {
+function rand<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-const MESSAGES: Record<string, string[]> = {
+const SEALED_PRODUCT_TYPES = new Set([
+  "booster_pack", "booster_box", "etb", "tin", "collection_box",
+  "theme_deck", "starter_deck", "bundle", "promo_pack", "master_set", "other_sealed",
+]);
+
+const RAW_CONDITIONS = ["NM", "NM", "NM", "LP", "LP", "MP"] as const;
+const GRADING_COMPANIES = ["PSA", "PSA", "CGC", "BGS"] as const;
+const SEALED_CONDITIONS = ["factory_sealed", "factory_sealed", "sealed_no_outer_wrap"] as const;
+const GRADES = [7, 7.5, 8, 8.5, 9, 9, 9.5, 10] as const;
+
+const CHAT_MESSAGES: Record<string, string[]> = {
   casual: [
     "anyone else just buying cards they like and ignoring the market lol",
     "found a holo in a random binder at a garage sale today. still buzzing",
@@ -133,41 +143,213 @@ const MESSAGES: Record<string, string[]> = {
   ],
 };
 
-export async function runBotTick(count: number): Promise<{ ok: boolean; sent: number }> {
-  const sb = getClient();
-  const safeCount = Math.min(count, 30);
+const BOARD_POSTS: Record<string, Array<{ content: string; post_type: string }>> = {
+  casual: [
+    { content: "anyone have spare pikachu cards? not picky about set or condition, just love collecting them", post_type: "looking_for" },
+    { content: "selling off some duplicates from my binder, mostly commons and uncommons from modern sets", post_type: "selling" },
+    { content: "happy to trade modern doubles for anything i'm missing, not fussy about value matching exactly", post_type: "trading" },
+    { content: "looking for affordable base set cards to frame on my wall. condition doesn't need to be perfect", post_type: "looking_for" },
+    { content: "does anyone buy bulk commons? have a huge pile taking up space and want to give them a good home", post_type: "selling" },
+    { content: "looking for any eeveelution cards, they're my favourite and i want every version ever printed", post_type: "looking_for" },
+    { content: "selling a small collection, mostly 2020-2023 stuff. priced cheap just to move them along", post_type: "selling" },
+    { content: "does condition matter that much for display cards? asking for my binder builds", post_type: "general" },
+    { content: "would anyone trade a charizard card (any edition) for a bunch of stuff from my collection?", post_type: "trading" },
+    { content: "first time buying singles here, what should i know before i start messaging people?", post_type: "general" },
+  ],
+  hype: [
+    { content: "WHO HAS EXTRA ALT ARTS from the latest set. need them. name your price and i'll make it work", post_type: "buying" },
+    { content: "bulk buying anything chase from the current set. serious buyer, fast payment", post_type: "buying" },
+    { content: "selling a gold card, this thing is absolutely gorgeous in hand. serious offers only please", post_type: "selling" },
+    { content: "NEED Charizard ex special art ASAP before the price spikes further. who has one", post_type: "buying" },
+    { content: "anyone preordering the new set? thinking about going in on a case split to reduce per-box cost", post_type: "general" },
+    { content: "selling my duplicate secret rares from the last 3 sets. DM for a full list with prices", post_type: "selling" },
+    { content: "buying every Umbreon alt art variant I can find. if you have one, talk to me", post_type: "buying" },
+    { content: "who wants to do a box split on the new set? going halves on a booster box", post_type: "general" },
+    { content: "selling these to fund my next box purchase. priced to go fast", post_type: "selling" },
+    { content: "is anyone else addicted to opening packs on live? send help and also ETBs", post_type: "general" },
+  ],
+  vintage: [
+    { content: "WTB: 1st edition base set cards in any condition. especially looking for Charizard, Blastoise, Venusaur", post_type: "buying" },
+    { content: "selling shadowless holos from base set, all NM condition, serious buyers only please", post_type: "selling" },
+    { content: "anyone have WOTC era collections to move? looking to buy whole collections from the right seller", post_type: "buying" },
+    { content: "trading modern staples for vintage singles. prefer WOTC era. fair trade values, no low offers", post_type: "trading" },
+    { content: "LF: Neo Genesis Lugia in NM or better. willing to pay a proper price for the right copy", post_type: "looking_for" },
+    { content: "selling Team Rocket 1st edition holos, documented and graded, serious collectors only", post_type: "selling" },
+    { content: "looking to buy Gym Heroes and Gym Challenge holos, any condition considered for the right price", post_type: "buying" },
+    { content: "does anyone have Fossil set cards they'd sell as a lot? trying to complete the set", post_type: "buying" },
+    { content: "trading my modern pulls for vintage anything. i just want old cards. DM me what you have", post_type: "trading" },
+    { content: "selling some jungle holos that came back from PSA. fair comp-based pricing", post_type: "selling" },
+  ],
+  competitive: [
+    { content: "LF: 4x Iono. offering cash or will trade current meta staples. urgent before my next locals", post_type: "looking_for" },
+    { content: "selling spare competitive staples rotating out of format next quarter. priced to move", post_type: "selling" },
+    { content: "WTB Pidgeot ex playset, need before regionals this weekend. paying market for quick deal", post_type: "buying" },
+    { content: "trading out of rotation cards for current meta picks. have a decent pile to work with", post_type: "trading" },
+    { content: "need 2 more Gardevoir ex to complete my playset. who has them at a reasonable price", post_type: "looking_for" },
+    { content: "selling my spare Chien-Pao build pieces, replacing the whole deck. prices are fair", post_type: "selling" },
+    { content: "anyone doing a prerelease for the new set this weekend? want to trade after the event", post_type: "general" },
+    { content: "buying bulk tournament staples, especially supporters. need Iono, Boss, Arven", post_type: "buying" },
+    { content: "trading my spare regionals promo for something i actually need in my current list", post_type: "trading" },
+    { content: "who's going to regionals next month? maybe we can arrange some trades there in person", post_type: "general" },
+  ],
+  sealed: [
+    { content: "selling 3 sealed ETBs from the last set, stored in cool dry conditions since day one", post_type: "selling" },
+    { content: "LF sealed booster boxes from 2020-2022, paying market price for well-stored boxes", post_type: "looking_for" },
+    { content: "have sealed product to trade but sealed only, not interested in trading for raw singles", post_type: "trading" },
+    { content: "buying sealed vintage packs if anyone is willing to part with them. real money available", post_type: "buying" },
+    { content: "selling some duplicate sealed ETBs from sets I overcommitted on. will deal on multiples", post_type: "selling" },
+    { content: "anyone have sealed SV era booster boxes? looking to add 2-3 more to my sealed vault", post_type: "buying" },
+    { content: "selling a sealed booster box I've had since release. storage has been perfect", post_type: "selling" },
+    { content: "looking to trade sealed for sealed only. have modern SV era boxes to swap", post_type: "trading" },
+    { content: "what's the best way to store sealed product long term? humidity control vs just dark and cool?", post_type: "general" },
+    { content: "LF factory sealed ETBs from Evolving Skies era. willing to pay premium for right condition", post_type: "looking_for" },
+  ],
+  grader: [
+    { content: "selling PSA 10s from my recent submission batch, got back more tens than expected. DM for list", post_type: "selling" },
+    { content: "WTB NM raw copies of vintage holos for grading. paying slightly under market to account for grading cost", post_type: "buying" },
+    { content: "trading graded cards for other graded only. looking to upgrade some of my lower slabs", post_type: "trading" },
+    { content: "LF: NM copies of neo genesis starters for a PSA batch submission. timing sensitive", post_type: "looking_for" },
+    { content: "selling a BGS 9.5 from my collection, priced fairly based on recent comparable sales", post_type: "selling" },
+    { content: "buying raw NM moderns with low PSA 10 pop potential. happy to discuss specifics", post_type: "buying" },
+    { content: "got back a PSA 10 on a card I bought raw for $8. that's why you grade everything decent", post_type: "general" },
+    { content: "selling my CGC graded lot, moving fully to PSA. all cards come with comp data", post_type: "selling" },
+    { content: "looking for any 1st ed WOTC cards in NM for a large grading submission. buying in bulk", post_type: "buying" },
+    { content: "trading my lower grade slabs (7s and 8s) for anything in a 9 or better slab", post_type: "trading" },
+  ],
+  investor: [
+    { content: "trimming some positions, selling select vintage pieces. not distressed, just rebalancing the portfolio", post_type: "selling" },
+    { content: "WTB vintage holos in quantity. if you have a collection to liquidate let's have a real conversation", post_type: "buying" },
+    { content: "LF: undervalued sealed product from 2017-2020. paying fair prices for the right inventory", post_type: "looking_for" },
+    { content: "trading modern chase for vintage. any era considered. prefer WOTC but will evaluate everything", post_type: "trading" },
+    { content: "selling a position I've held since 2019, returns have been excellent. someone else's turn to hold", post_type: "selling" },
+    { content: "buying sealed product systematically. if you have cases to move, DM with photos and asking price", post_type: "buying" },
+    { content: "looking for grail vintage cards from serious collectors who need liquidity. discreet, fair offers", post_type: "buying" },
+    { content: "selling off some of my modern speculation positions. market timing looks right to rotate to vintage", post_type: "selling" },
+    { content: "anyone tracking the Japanese exclusive market? seeing some interesting price divergence vs US", post_type: "general" },
+    { content: "trading modern sealed for raw vintage. looking for WOTC era specifically", post_type: "trading" },
+  ],
+};
 
-  const { data: chatBots } = await sb
+type BotRow = { id: string; personality: string };
+type CardRow = { id: string; product_type: string };
+
+function buildListing(personality: string, card: CardRow) {
+  const isSealed = SEALED_PRODUCT_TYPES.has(card.product_type);
+
+  const sealedBase: Record<string, number> = { casual: 12, hype: 50, vintage: 90, competitive: 35, sealed: 65, grader: 45, investor: 110 };
+  const singleBase: Record<string, number> = { casual: 2, hype: 25, vintage: 60, competitive: 18, sealed: 8, grader: 30, investor: 50 };
+  const base = isSealed ? (sealedBase[personality] ?? 25) : (singleBase[personality] ?? 8);
+  const price = parseFloat((base * (0.55 + Math.random() * 0.9)).toFixed(2));
+
+  const listingType = Math.random() < 0.72 ? "for_sale" : "wanted";
+
+  let condition_type: string;
+  let raw_condition: string | null = null;
+  let grading_company: string | null = null;
+  let grade: number | null = null;
+  let sealed_condition: string | null = null;
+
+  if (isSealed) {
+    condition_type = "sealed";
+    sealed_condition = rand(SEALED_CONDITIONS);
+  } else if (
+    (personality === "grader" && Math.random() < 0.6) ||
+    (personality === "vintage" && Math.random() < 0.3) ||
+    (personality === "investor" && Math.random() < 0.2)
+  ) {
+    condition_type = "graded";
+    grading_company = rand(GRADING_COMPANIES);
+    grade = rand(GRADES);
+  } else {
+    condition_type = "raw";
+    raw_condition = rand(RAW_CONDITIONS);
+  }
+
+  return { listing_type: listingType, condition_type, raw_condition, grading_company, grade, sealed_condition, price, status: "active", is_featured: false };
+}
+
+export async function runBotTick(count: number): Promise<{ ok: boolean; sent: number; chat: number; board: number; listings: number }> {
+  const sb = getClient();
+  const safeCount = Math.min(count, 50);
+
+  const { data: activeBots } = await sb
     .from("bots")
-    .select("id, username, display_name, avatar_seed, avatar_style, personality")
+    .select("id, personality")
     .eq("chat_enabled", true)
     .order("last_active_at", { ascending: true, nullsFirst: true })
     .limit(safeCount * 3);
 
-  if (!chatBots || chatBots.length === 0) return { ok: true, sent: 0 };
+  if (!activeBots || activeBots.length === 0) return { ok: true, sent: 0, chat: 0, board: 0, listings: 0 };
 
-  const shuffled = chatBots.sort(() => Math.random() - 0.5).slice(0, safeCount);
+  const bots = (activeBots as BotRow[]).sort(() => Math.random() - 0.5).slice(0, safeCount);
   const now = Date.now();
-  let sent = 0;
+  let chat = 0, board = 0, listings = 0;
 
-  for (const bot of shuffled) {
-    const pool = MESSAGES[bot.personality] ?? MESSAGES.casual;
-    const content = rand(pool);
-    const offsetMs = Math.floor(Math.random() * 4 * 60 * 1000);
+  // Fetch a card pool once for listing creation
+  const { data: cards } = await sb
+    .from("cards")
+    .select("id, product_type")
+    .eq("language", "en")
+    .neq("product_type", "other")
+    .limit(500);
+  const cardPool = (cards ?? []) as CardRow[];
+
+  for (const bot of bots) {
+    const roll = Math.random();
+    const offsetMs = Math.floor(Math.random() * 3 * 60 * 1000);
     const created_at = new Date(now - offsetMs).toISOString();
 
-    const { error } = await sb.from("global_chat_messages").insert({
-      user_id: bot.id,
-      bot_id: bot.id,
-      content,
-      created_at,
-    });
-
-    if (!error) {
-      await sb.from("bots").update({ last_active_at: new Date().toISOString() }).eq("id", bot.id);
-      sent++;
+    if (roll < 0.55) {
+      // Chat message
+      const pool = CHAT_MESSAGES[bot.personality] ?? CHAT_MESSAGES.casual;
+      const { error } = await sb.from("global_chat_messages").insert({
+        user_id: bot.id, bot_id: bot.id, content: rand(pool), created_at,
+      });
+      if (!error) chat++;
+    } else if (roll < 0.80) {
+      // Board post
+      const pool = BOARD_POSTS[bot.personality] ?? BOARD_POSTS.casual;
+      const { content, post_type } = rand(pool);
+      const { error } = await sb.from("board_posts").insert({
+        user_id: bot.id, content, post_type,
+      });
+      if (!error) board++;
+    } else if (cardPool.length > 0) {
+      // Listing — only if bot has fewer than 5 active listings
+      const { count: existingCount } = await sb
+        .from("listings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", bot.id)
+        .eq("status", "active");
+      if ((existingCount ?? 0) < 5) {
+        const card = rand(cardPool);
+        const listing = buildListing(bot.personality, card);
+        const { error } = await sb.from("listings").insert({ user_id: bot.id, card_id: card.id, price_type: "firm", ...listing });
+        if (!error) listings++;
+      }
     }
+
+    await sb.from("bots").update({ last_active_at: new Date().toISOString() }).eq("id", bot.id);
   }
 
-  return { ok: true, sent };
+  const sent = chat + board + listings;
+  return { ok: true, sent, chat, board, listings };
+}
+
+export async function runSingleBotTick(botId: string): Promise<string> {
+  const sb = getClient();
+  const { data: bot } = await sb
+    .from("bots")
+    .select("id, personality")
+    .eq("id", botId)
+    .single();
+  if (!bot) return "";
+
+  const pool = CHAT_MESSAGES[(bot as BotRow).personality] ?? CHAT_MESSAGES.casual;
+  const content = rand(pool);
+  await sb.from("global_chat_messages").insert({
+    user_id: bot.id, bot_id: bot.id, content,
+  });
+  await sb.from("bots").update({ last_active_at: new Date().toISOString() }).eq("id", botId);
+  return content;
 }

@@ -35,6 +35,11 @@ export default async function PublicProfilePage({
     id: string;
     quantity: number;
     for_sale: boolean;
+    pinned: boolean;
+    condition_type: string | null;
+    raw_condition: string | null;
+    grading_company: string | null;
+    grade: number | null;
     card: { name: string; set_name: string; card_number: string; image_url: string | null };
   };
 
@@ -61,8 +66,9 @@ export default async function PublicProfilePage({
       .order("created_at", { ascending: false }),
     supabase
       .from("collection_items")
-      .select("id, quantity, for_sale, card:cards(name, set_name, card_number, image_url)")
+      .select("id, quantity, for_sale, pinned, condition_type, raw_condition, grading_company, grade, card:cards(name, set_name, card_number, image_url)")
       .eq("user_id", profile.id)
+      .order("pinned", { ascending: false })
       .order("created_at", { ascending: false }),
   ]);
 
@@ -96,25 +102,40 @@ export default async function PublicProfilePage({
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-4">
 
         {/* Identity card */}
-        <div className="bg-white border-2 border-black p-6 flex items-start gap-5">
-          <img
-            src={avatarUrl(style, seed)}
-            alt={displayName}
-            className="keep-round w-20 h-20 shrink-0"
-          />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-black truncate">{displayName}</h1>
-            <p className="text-sm text-gray-700">@{profile.username}</p>
-            {location && <p className="text-sm text-black mt-1">{location}</p>}
-            <p className="text-xs text-gray-700 mt-1">Member since {memberSince}</p>
+        <div className="bg-white border-2 border-black">
+          {/* Top: avatar + info */}
+          <div className="flex items-start gap-4 p-5">
+            <img
+              src={avatarUrl(style, seed)}
+              alt={displayName}
+              className="keep-round w-16 h-16 sm:w-20 sm:h-20 shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-black leading-tight">{displayName}</h1>
+              <p className="text-sm text-gray-700">@{profile.username}</p>
+              {location && <p className="text-sm text-black mt-1">{location}</p>}
+              <p className="text-xs text-gray-700 mt-1">Member since {memberSince}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+
+          {/* Bottom: action buttons */}
+          <div className="border-t-2 border-black flex divide-x-2 divide-black">
+            {currentUser && currentUser.id === profile.id && (
+              <Link
+                href="/profile"
+                className="flex-1 py-2.5 text-xs font-black uppercase tracking-widest text-center hover:bg-black hover:text-white transition-colors"
+              >
+                Edit profile
+              </Link>
+            )}
             {currentUser && currentUser.id !== profile.id && (
-              <BookmarkButton
-                targetType="user"
-                targetId={profile.id}
-                initialBookmarked={isBookmarked}
-              />
+              <div className="flex items-center justify-center px-3 py-2.5">
+                <BookmarkButton
+                  targetType="user"
+                  targetId={profile.id}
+                  initialBookmarked={isBookmarked}
+                />
+              </div>
             )}
             <CopyProfileUrl username={profile.username!} />
           </div>
@@ -149,47 +170,111 @@ export default async function PublicProfilePage({
           </div>
         )}
 
-        {/* ogogog collection */}
-        {collectionItems.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-black">
-                Collection
-                <span className="text-sm font-normal text-gray-700 ml-2">{collectionItems.length} cards</span>
-              </h2>
+        {/* Collection snippet — always visible; 6 items max with link to full page */}
+        <div className="border-2 border-black">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-black">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xs font-black uppercase tracking-widest text-white">Collection</h2>
+                {collectionItems.length > 0 && (
+                  <span className="text-xs font-bold text-white/60">{collectionItems.length} cards</span>
+                )}
+              </div>
+              <Link
+                href={`/u/${profile.username}/collection`}
+                className="text-xs font-black uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+              >
+                View all →
+              </Link>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {collectionItems.map(item => (
-                <div key={item.id} className="relative group">
-                  {item.card?.image_url ? (
-                    <SafeImage
-                      src={item.card.image_url}
-                      alt={item.card.name ?? ""}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-auto rounded-lg"
-                      fallback={<div className="w-full aspect-[2.5/3.5] bg-gray-100 rounded-lg" />}
-                    />
-                  ) : (
-                    <div className="w-full aspect-[2.5/3.5] bg-gray-100 rounded-lg" />
-                  )}
-                  {item.quantity > 1 && (
-                    <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                      ×{item.quantity}
-                    </span>
-                  )}
-                  {item.for_sale && (
-                    <span className="absolute top-1 right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                      FS
-                    </span>
-                  )}
-                  <div className="hidden group-hover:block absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] p-1 rounded-b-lg leading-tight">
-                    {item.card.name}
-                  </div>
+
+            {/* 6-card grid — bg-black + gap-[2px] renders borders without divide-x wrapping bugs */}
+            <Link href={`/u/${profile.username}/collection`} className="block group/snippet">
+              <div className="grid grid-cols-3 sm:grid-cols-6 bg-black gap-[2px]">
+                {(() => {
+                  const slots = collectionItems.slice(0, 6);
+                  const empties = Array.from({ length: Math.max(0, 6 - slots.length) });
+                  return (
+                    <>
+                      {slots.map((item) => {
+                        const cond = item.condition_type === "raw" && item.raw_condition
+                          ? item.raw_condition
+                          : item.condition_type === "graded" && item.grading_company && item.grade !== null
+                          ? `${item.grading_company} ${item.grade}`
+                          : item.condition_type === "sealed"
+                          ? "Sealed"
+                          : null;
+
+                        return (
+                          <div key={item.id} className="relative group p-2 flex flex-col gap-1 bg-white hover:bg-gray-50 transition-colors">
+                            {item.card?.image_url ? (
+                              <SafeImage
+                                src={item.card.image_url}
+                                alt={item.card.name ?? ""}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-auto"
+                                fallback={<div className="w-full aspect-[2.5/3.5] bg-gray-100" />}
+                              />
+                            ) : (
+                              <div className="w-full aspect-[2.5/3.5] bg-gray-100" />
+                            )}
+                            {item.quantity > 1 && (
+                              <span className="absolute top-3 left-3 bg-black text-white text-[9px] font-black px-1 py-0.5 leading-none">
+                                ×{item.quantity}
+                              </span>
+                            )}
+                            {item.for_sale && (
+                              <span className="absolute top-1 right-1 bg-green-600 text-white text-[9px] font-black px-1 py-0.5 leading-none">
+                                FS
+                              </span>
+                            )}
+                            <div className="hidden group-hover:flex flex-col absolute bottom-1 left-1 right-1 bg-black p-1.5 gap-0.5">
+                              <p className="text-[10px] font-black text-white leading-tight truncate">{item.card.name}</p>
+                              {cond && <p className="text-[9px] font-bold text-white/60 leading-none">{cond}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {empties.map((_, i) => (
+                        <div key={`empty-${i}`} className="p-2 bg-white">
+                          <div className="w-full aspect-[2.5/3.5] bg-gray-50 border-2 border-dashed border-gray-200" />
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Footer — only shown when there are more than 6 */}
+              {collectionItems.length > 6 && (
+                <div className="border-t-2 border-black px-4 py-2.5 flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-700">
+                    Showing 6 of {collectionItems.length} cards
+                  </p>
+                  <p className="text-xs font-black text-black uppercase tracking-widest">
+                    See full collection →
+                  </p>
                 </div>
-              ))}
-            </div>
+              )}
+            </Link>
+
+            {/* Empty state */}
+            {collectionItems.length === 0 && (
+              <div className="px-4 py-8 text-center">
+                {currentUser?.id === profile.id ? (
+                  <>
+                    <p className="text-sm font-bold text-black mb-1">Your collection is empty</p>
+                    <p className="text-xs text-gray-700 mb-4">Add cards to show them off on your profile.</p>
+                    <Link href="/collection" className="text-xs font-black uppercase tracking-widest bg-black text-white px-4 py-2 hover:bg-zinc-800 transition-colors">
+                      Add cards →
+                    </Link>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-700">{displayName} hasn&apos;t added any cards yet.</p>
+                )}
+              </div>
+            )}
           </div>
-        )}
 
         {/* Notes */}
         {profile.notes && (

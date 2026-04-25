@@ -15,26 +15,49 @@ export default async function BoardPage() {
     content: string;
     post_type: string;
     created_at: string;
-    profile: { username: string | null; display_name: string | null; avatar_seed: string | null; avatar_style: string | null } | null;
+  };
+
+  type ProfileRow = {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    avatar_seed: string | null;
+    avatar_style: string | null;
   };
 
   const { data: rawPosts } = await supabase
     .from("board_posts")
-    .select("id, user_id, content, post_type, created_at, profile:profiles!user_id(username, display_name, avatar_seed, avatar_style)")
+    .select("id, user_id, content, post_type, created_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(100);
 
-  const posts: BoardPost[] = ((rawPosts ?? []) as unknown as RawPost[]).map(p => ({
-    id: p.id,
-    user_id: p.user_id,
-    content: p.content,
-    post_type: p.post_type,
-    created_at: p.created_at,
-    profile: p.profile
-      ? { ...p.profile, avatar_style: p.profile.avatar_style as AvatarStyle | null }
-      : null,
-  }));
+  const postList = (rawPosts ?? []) as RawPost[];
+
+  // Fetch profiles separately — board_posts.user_id has no direct FK to profiles
+  const userIds = [...new Set(postList.map(p => p.user_id))];
+  let profileMap = new Map<string, ProfileRow>();
+  if (userIds.length > 0) {
+    const { data: profileRows } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_seed, avatar_style")
+      .in("id", userIds);
+    for (const pr of (profileRows ?? []) as ProfileRow[]) {
+      profileMap.set(pr.id, pr);
+    }
+  }
+
+  const posts: BoardPost[] = postList.map(p => {
+    const pr = profileMap.get(p.user_id) ?? null;
+    return {
+      id: p.id,
+      user_id: p.user_id,
+      content: p.content,
+      post_type: p.post_type,
+      created_at: p.created_at,
+      profile: pr ? { ...pr, avatar_style: pr.avatar_style as AvatarStyle | null } : null,
+    };
+  });
 
   let currentUserProfile = null;
   if (user) {
@@ -42,7 +65,7 @@ export default async function BoardPage() {
       .from("profiles")
       .select("username, display_name, avatar_seed, avatar_style")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
     currentUserProfile = profile;
   }
 

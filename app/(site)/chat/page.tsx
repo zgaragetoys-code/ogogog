@@ -17,7 +17,7 @@ export default async function ChatPage() {
     .from("profiles")
     .select("global_chat_enabled, username, display_name, avatar_seed, avatar_style")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   const chatEnabled = profileData?.global_chat_enabled ?? true;
   const isAdmin = user.email === process.env.ADMIN_EMAIL;

@@ -1,13 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import type { EmailOtpType } from "@supabase/auth-js";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as "signup" | "magiclink" | null;
-  const next = searchParams.get("next") ?? "/featured";
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const next = searchParams.get("next") ?? "/browse";
 
   const cookieStore = await cookies();
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   }
 
   if (token_hash && type) {
@@ -40,7 +42,10 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error("[auth/callback] verifyOtp failed:", error.message, "type:", type);
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent("Invalid or expired link. Please try again.")}`);
+  return NextResponse.redirect(
+    `${origin}/auth/login?error=${encodeURIComponent("Verification link is invalid or expired. Try signing in or request a new link.")}`
+  );
 }

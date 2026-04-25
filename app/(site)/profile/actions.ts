@@ -108,4 +108,6 @@ export async function updateProfile(
   }
 
   revalidatePath("/profile");
+  revalidatePath(`/u/${username}`);
+  revalidatePath(`/u/${username}/collection`);
 }

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { checkProfanity } from "@/lib/moderation";
 import {
   LISTING_TYPES,
@@ -143,10 +144,12 @@ export async function createListing(
   }
 
   if (conditionType === "raw") {
-    if (!rawConditionRaw || !RAW_CONDITIONS.includes(rawConditionRaw as RawCondition)) {
-      return { error: "Invalid condition grade." };
+    if (rawConditionRaw) {
+      if (!RAW_CONDITIONS.includes(rawConditionRaw as RawCondition))
+        return { error: "Invalid condition grade." };
+      rawCondition = rawConditionRaw as RawCondition;
     }
-    rawCondition = rawConditionRaw as RawCondition;
+    // blank rawCondition = "any grade" — valid
   }
 
   if (conditionType === "sealed") {
@@ -264,5 +267,7 @@ export async function createListing(
     return { error: "Failed to create listing. Please try again." };
   }
 
+  revalidatePath("/listings/mine");
+  revalidatePath("/browse");
   redirect("/listings/mine?created=1");
 }

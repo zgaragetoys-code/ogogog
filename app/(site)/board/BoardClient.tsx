@@ -67,7 +67,8 @@ function PostCard({
   async function handleDelete() {
     if (!confirm("Delete this post?")) return;
     setDeleting(true);
-    await deleteBoardPost(post.id);
+    const result = await deleteBoardPost(post.id);
+    if (result?.error) { setDeleting(false); return; }
     onDelete(post.id);
   }
 
@@ -153,7 +154,7 @@ export default function BoardClient({ initialPosts, currentUserId, currentUserPr
             .from("profiles")
             .select("username, display_name, avatar_seed, avatar_style")
             .eq("id", newPost.user_id)
-            .single();
+            .maybeSingle();
           setPosts((prev) => [
             { ...newPost, profile: profile as PostProfile | null },
             ...prev,

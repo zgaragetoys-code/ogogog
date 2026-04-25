@@ -140,11 +140,12 @@ export default async function AdminBotsPage({
       {/* Bot list */}
       <div className="border-2 border-black divide-y-2 divide-black">
         {/* Table header */}
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-2 bg-black text-white text-xs font-black uppercase tracking-wide">
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-2 bg-black text-white text-xs font-black uppercase tracking-wide">
           <span>Bot</span>
           <span className="w-20 text-center">Personality</span>
           <span className="w-16 text-center">Chat</span>
           <span className="w-16 text-center">Posting</span>
+          <span className="w-16 text-center">Fire</span>
         </div>
 
         {(bots ?? []).map((bot) => (

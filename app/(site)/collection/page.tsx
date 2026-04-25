@@ -8,11 +8,21 @@ export default async function CollectionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/collection");
 
-  const { data } = await supabase
-    .from("collection_items")
-    .select("id, card_id, quantity, for_sale, condition_type, raw_condition, grading_company, grade, notes, card:cards(name, set_name, card_number, image_url, product_type)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [{ data }, { data: profileRow }] = await Promise.all([
+    supabase
+      .from("collection_items")
+      .select("id, card_id, quantity, for_sale, pinned, condition_type, raw_condition, grading_company, grade, notes, card:cards(name, set_name, card_number, image_url, product_type)")
+      .eq("user_id", user.id)
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle(),
+  ]);
+
+  const profileHref = profileRow?.username ? `/u/${profileRow.username}` : "/profile";
 
   return (
     <div className="min-h-screen bg-white">
@@ -24,10 +34,7 @@ export default async function CollectionPage() {
               Track what you own and mark cards for sale.
             </p>
           </div>
-          <Link
-            href="/profile"
-            className="text-sm font-bold text-black hover:underline"
-          >
+          <Link href={profileHref} className="text-sm font-bold text-black hover:underline">
             ← Profile
           </Link>
         </div>

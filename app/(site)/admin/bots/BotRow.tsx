@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { toggleBot } from "./actions";
+import { toggleBot, fireBotNow } from "./actions";
 
 type Bot = {
   id: string;
@@ -14,24 +14,16 @@ type Bot = {
 };
 
 const PERSONALITY_COLORS: Record<string, string> = {
-  casual: "bg-gray-100 text-gray-700",
-  hype: "bg-orange-100 text-orange-700",
-  vintage: "bg-purple-100 text-purple-700",
+  casual:      "bg-gray-100 text-gray-700",
+  hype:        "bg-orange-100 text-orange-700",
+  vintage:     "bg-purple-100 text-purple-700",
   competitive: "bg-blue-100 text-blue-700",
-  sealed: "bg-teal-100 text-teal-700",
-  grader: "bg-yellow-100 text-yellow-800",
-  investor: "bg-green-100 text-green-700",
+  sealed:      "bg-teal-100 text-teal-700",
+  grader:      "bg-yellow-100 text-yellow-800",
+  investor:    "bg-green-100 text-green-700",
 };
 
-function Toggle({
-  enabled,
-  onToggle,
-  pending,
-}: {
-  enabled: boolean;
-  onToggle: () => void;
-  pending: boolean;
-}) {
+function Toggle({ enabled, onToggle, pending }: { enabled: boolean; onToggle: () => void; pending: boolean }) {
   return (
     <button
       type="button"
@@ -41,11 +33,9 @@ function Toggle({
         enabled ? "bg-black" : "bg-white"
       }`}
     >
-      <span
-        className={`absolute top-0.5 w-3 h-3 transition-transform ${
-          enabled ? "translate-x-4 bg-white" : "translate-x-0.5 bg-gray-400"
-        }`}
-      />
+      <span className={`absolute top-0.5 w-3 h-3 transition-transform ${
+        enabled ? "translate-x-4 bg-white" : "translate-x-0.5 bg-gray-400"
+      }`} />
     </button>
   );
 }
@@ -53,7 +43,9 @@ function Toggle({
 export default function BotRow({ bot }: { bot: Bot }) {
   const [chatEnabled, setChatEnabled] = useState(bot.chat_enabled);
   const [postingEnabled, setPostingEnabled] = useState(bot.posting_enabled);
-  const [isPending, startTransition] = useTransition();
+  const [togglePending, startToggle] = useTransition();
+  const [firePending, startFire] = useTransition();
+  const [fireResult, setFireResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => { setChatEnabled(bot.chat_enabled); }, [bot.chat_enabled]);
   useEffect(() => { setPostingEnabled(bot.posting_enabled); }, [bot.posting_enabled]);
@@ -65,32 +57,76 @@ export default function BotRow({ bot }: { bot: Bot }) {
   function handleChat() {
     const next = !chatEnabled;
     setChatEnabled(next);
-    startTransition(() => toggleBot(bot.id, "chat_enabled", next));
+    startToggle(async () => {
+      try {
+        await toggleBot(bot.id, "chat_enabled", next);
+      } catch {
+        setChatEnabled(!next);
+      }
+    });
   }
 
   function handlePosting() {
     const next = !postingEnabled;
     setPostingEnabled(next);
-    startTransition(() => toggleBot(bot.id, "posting_enabled", next));
+    startToggle(async () => {
+      try {
+        await toggleBot(bot.id, "posting_enabled", next);
+      } catch {
+        setPostingEnabled(!next);
+      }
+    });
+  }
+
+  function handleFire() {
+    startFire(async () => {
+      const res = await fireBotNow(bot.id);
+      setFireResult({ ok: res.ok, msg: res.ok ? (res.content ?? "posted!") : "failed" });
+      setTimeout(() => setFireResult(null), 5000);
+    });
   }
 
   return (
-    <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 transition-colors ${isPending ? "opacity-60" : "hover:bg-gray-50"}`}>
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-black truncate">@{bot.username}</p>
-        <p className="text-xs text-gray-700 truncate">{bot.display_name} · last active {lastActive}</p>
+    <div className={`px-4 py-3 transition-colors ${togglePending ? "opacity-50" : "hover:bg-gray-50"}`}>
+      <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-black truncate">@{bot.username}</p>
+          <p className="text-xs text-gray-700 truncate">{bot.display_name} · last active {lastActive}</p>
+        </div>
+
+        <div className="w-20 text-center">
+          <span className={`text-[10px] font-black px-1.5 py-0.5 uppercase ${PERSONALITY_COLORS[bot.personality] ?? "bg-gray-100 text-gray-700"}`}>
+            {bot.personality}
+          </span>
+        </div>
+
+        <div className="w-16 flex justify-center">
+          <Toggle enabled={chatEnabled} onToggle={handleChat} pending={togglePending} />
+        </div>
+
+        <div className="w-16 flex justify-center">
+          <Toggle enabled={postingEnabled} onToggle={handlePosting} pending={togglePending} />
+        </div>
+
+        <div className="w-16 flex justify-center">
+          <button
+            type="button"
+            onClick={handleFire}
+            disabled={firePending || !chatEnabled}
+            title={chatEnabled ? "Fire this bot now" : "Enable chat first"}
+            className="text-xs px-2 py-1 border-2 border-black font-bold hover:bg-black hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            {firePending ? "…" : "⚡"}
+          </button>
+        </div>
       </div>
-      <div className="w-20 text-center">
-        <span className={`text-[10px] font-black px-1.5 py-0.5 uppercase ${PERSONALITY_COLORS[bot.personality] ?? "bg-gray-100 text-gray-700"}`}>
-          {bot.personality}
-        </span>
-      </div>
-      <div className="w-16 flex justify-center">
-        <Toggle enabled={chatEnabled} onToggle={handleChat} pending={isPending} />
-      </div>
-      <div className="w-16 flex justify-center">
-        <Toggle enabled={postingEnabled} onToggle={handlePosting} pending={isPending} />
-      </div>
+
+      {/* Inline result — shows what the bot just said */}
+      {fireResult && (
+        <div className={`mt-2 text-xs px-3 py-1.5 border-l-4 ${fireResult.ok ? "border-green-500 bg-green-50 text-green-800" : "border-red-500 bg-red-50 text-red-700"}`}>
+          {fireResult.ok ? `✓ posted: "${fireResult.msg}"` : "✗ fire failed — check that the bot is enabled"}
+        </div>
+      )}
     </div>
   );
 }
