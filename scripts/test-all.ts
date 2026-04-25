@@ -124,11 +124,13 @@ async function main() {
   });
 
   await section("Bot System", async () => {
-    const { count: chatEnabled } = await admin
+    const { data: chatEnabledBots } = await admin
       .from("bots")
-      .select("*", { count: "exact", head: true })
-      .eq("chat_enabled", true);
-    ok(`bots: some chat-enabled (${chatEnabled})`, (chatEnabled ?? 0) > 0);
+      .select("id")
+      .eq("chat_enabled", true)
+      .limit(1);
+    const chatEnabled = (chatEnabledBots ?? []).length;
+    ok(`bots: some chat-enabled (${chatEnabled})`, chatEnabled > 0);
 
     const { data: personalityRows } = await admin.from("bots").select("personality").limit(100);
     const unique = new Set(personalityRows?.map((b: any) => b.personality) ?? []);

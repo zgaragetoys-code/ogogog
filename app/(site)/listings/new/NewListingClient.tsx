@@ -61,7 +61,7 @@ export default function NewListingClient({ initialCardId }: { initialCardId?: st
   useEffect(() => {
     if (!initialCardId) return;
     const sb = createClient();
-    sb.from("cards").select("id, name, set_name, card_number, image_url, product_type").eq("id", initialCardId).single()
+    void sb.from("cards").select("id, name, set_name, card_number, image_url, product_type").eq("id", initialCardId).maybeSingle()
       .then(({ data }) => { if (data) setCard(data as Card); });
   }, [initialCardId]);
 

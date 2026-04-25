@@ -76,7 +76,7 @@ export async function createListing(
   if (mode === "catalog") {
     const cardIdRaw = formData.get("card_id") as string | null;
     if (!cardIdRaw) return { error: "No card selected." };
-    const { data: card } = await supabase.from("cards").select("id, product_type, release_date").eq("id", cardIdRaw).single();
+    const { data: card } = await supabase.from("cards").select("id, product_type, release_date").eq("id", cardIdRaw).maybeSingle();
     if (!card) return { error: "Card not found." };
     cardId = cardIdRaw;
     // Auto-populate year from card release_date
@@ -154,7 +154,7 @@ export async function createListing(
 
   if (conditionType === "sealed") {
     if (cardId) {
-      const { data: cardCheck } = await supabase.from("cards").select("product_type").eq("id", cardId).single();
+      const { data: cardCheck } = await supabase.from("cards").select("product_type").eq("id", cardId).maybeSingle();
       if (cardCheck && !SEALED_PRODUCT_TYPES.has(cardCheck.product_type)) {
         return { error: "Sealed condition is only valid for sealed products." };
       }
