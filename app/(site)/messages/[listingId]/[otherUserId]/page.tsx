@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { avatarUrl } from "@/lib/avatar";
 import type { AvatarStyle } from "@/types/database";
@@ -56,6 +57,7 @@ export default async function ThreadPage({
       .from("messages")
       .update({ read_at: new Date().toISOString() })
       .in("id", unread.map((m) => m.id));
+    revalidatePath("/messages");
   }
 
   const otherName = otherProfile?.display_name ?? otherProfile?.username ?? "User";
