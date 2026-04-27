@@ -156,7 +156,7 @@ function SellerCard({
 
   return (
     <div className="border-2 border-black p-5 space-y-4">
-      <p className="text-xs font-black uppercase tracking-widest text-black">Seller</p>
+      <p className="text-xs font-black uppercase tracking-widest text-black">{listingType === "wanted" ? "Buyer" : "Seller"}</p>
       <div className="flex items-center gap-3">
         <img src={avatarUrl(style, seed)} alt={displayName} className="keep-round w-12 h-12 shrink-0" />
         <div className="min-w-0">

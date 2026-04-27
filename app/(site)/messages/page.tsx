@@ -131,23 +131,13 @@ export default async function MessagesPage() {
         <h1 className="text-2xl font-black text-black uppercase tracking-tight mb-6 border-b-2 border-black pb-4">Messages</h1>
 
         {/* Global chat — community channel, separate from private threads */}
-        <Link
-          href="/chat"
-          className="flex items-center gap-4 p-4 mb-8 bg-yellow-50 border-2 border-black hover:bg-yellow-100 transition-colors group"
-        >
-          <div className="w-10 h-10 bg-yellow-400 border-2 border-black flex items-center justify-center shrink-0 text-lg">
-            💬
-          </div>
+        <Link href="/chat" className="flex items-center gap-4 p-4 mb-8 border-2 border-black hover:bg-black hover:text-white transition-colors group">
+          <div className="w-10 h-10 bg-yellow-400 border-2 border-black flex items-center justify-center shrink-0 text-lg">💬</div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-black">Global Chat</p>
-            <p className="text-xs text-gray-700 mt-0.5">Community channel — everyone is here</p>
+            <p className="text-sm font-black text-black group-hover:text-white uppercase tracking-tight">Global Chat</p>
+            <p className="text-xs text-gray-700 group-hover:text-gray-300 mt-0.5">Community channel — everyone is here</p>
           </div>
-          <svg
-            className="w-4 h-4 text-gray-400 group-hover:text-black transition-colors shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="w-4 h-4 text-black group-hover:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
