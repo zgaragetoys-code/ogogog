@@ -133,17 +133,17 @@ export default async function MessagesPage() {
         {/* Global chat — community channel, separate from private threads */}
         <Link
           href="/chat"
-          className="flex items-center gap-4 p-4 mb-8 bg-indigo-50 border-2 border-indigo-300 hover:bg-indigo-100 transition-colors group"
+          className="flex items-center gap-4 p-4 mb-8 bg-yellow-50 border-2 border-black hover:bg-yellow-100 transition-colors group"
         >
-          <div className="w-10 h-10 bg-indigo-200 border-2 border-indigo-300 flex items-center justify-center shrink-0 text-lg">
+          <div className="w-10 h-10 bg-yellow-400 border-2 border-black flex items-center justify-center shrink-0 text-lg">
             💬
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-indigo-900">Global Chat</p>
-            <p className="text-xs text-indigo-600 mt-0.5">Community channel — everyone is here</p>
+            <p className="text-sm font-bold text-black">Global Chat</p>
+            <p className="text-xs text-gray-700 mt-0.5">Community channel — everyone is here</p>
           </div>
           <svg
-            className="w-4 h-4 text-indigo-400 group-hover:text-indigo-700 transition-colors shrink-0"
+            className="w-4 h-4 text-gray-400 group-hover:text-black transition-colors shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

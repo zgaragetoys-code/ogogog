@@ -30,19 +30,27 @@ export async function GET(request: NextRequest) {
     }
   );
 
+  async function redirectAfterAuth(defaultNext: string) {
+    // Send new users (no username) to profile setup instead of the default destination
+    if (defaultNext === "/browse") {
+      const { data: { user: authedUser } } = await supabase.auth.getUser();
+      if (authedUser) {
+        const { data: prof } = await supabase.from("profiles").select("username").eq("id", authedUser.id).maybeSingle();
+        if (!prof?.username) return NextResponse.redirect(`${origin}/profile?setup=1`);
+      }
+    }
+    return NextResponse.redirect(`${origin}${defaultNext}`);
+  }
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    if (!error) return redirectAfterAuth(next);
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   }
 
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type });
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    if (!error) return redirectAfterAuth(next);
     console.error("[auth/callback] verifyOtp failed:", error.message, "type:", type);
   }
 

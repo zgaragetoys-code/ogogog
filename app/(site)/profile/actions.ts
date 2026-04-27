@@ -111,3 +111,21 @@ export async function updateProfile(
   revalidatePath(`/u/${username}`);
   revalidatePath(`/u/${username}/collection`);
 }
+
+export async function changePassword(
+  formData: FormData
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const newPassword = (formData.get("new_password") as string | null) ?? "";
+  const confirm = (formData.get("confirm_password") as string | null) ?? "";
+
+  if (newPassword.length < 8) return { error: "Password must be at least 8 characters." };
+  if (newPassword !== confirm) return { error: "Passwords don't match." };
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { error: error.message };
+  return { ok: true };
+}

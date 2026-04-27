@@ -127,6 +127,7 @@ function SellerCard({
   ownerId,
   listingId,
   listingStatus,
+  listingType,
   currentUserId,
 }: {
   profile: {
@@ -142,6 +143,7 @@ function SellerCard({
   ownerId: string;
   listingId: string;
   listingStatus: string;
+  listingType: string;
   currentUserId: string | null;
 }) {
   const seed = profile?.avatar_seed ?? listingId;
@@ -194,7 +196,7 @@ function SellerCard({
         )
       ) : currentUserId ? (
         <Link href={`/messages/${listingId}/${ownerId}`} className="block w-full py-2.5 bg-black text-white text-sm font-bold hover:bg-zinc-800 transition-colors text-center">
-          Message seller
+          {listingType === "wanted" ? "Message buyer" : "Message seller"}
         </Link>
       ) : (
         <Link href={`/auth/login?next=/messages/${listingId}/${ownerId}`} className="block w-full py-2.5 bg-black text-white text-sm font-bold hover:bg-zinc-800 transition-colors text-center">
@@ -327,6 +329,7 @@ export default async function ListingDetailPage({
               ownerId={ownerId}
               listingId={id}
               listingStatus={listing.status}
+              listingType={listing.listing_type}
               currentUserId={user?.id ?? null}
             />
             {user && !isOwner ? (

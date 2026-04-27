@@ -3,13 +3,18 @@ import { redirect } from "next/navigation";
 import ProfileClient from "./ProfileClient";
 import type { Profile } from "@/types/database";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ setup?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login?next=/profile");
+  const { setup } = await searchParams;
 
   let { data } = await supabase
     .from("profiles")
@@ -35,6 +40,7 @@ export default async function ProfilePage() {
       profile={data as Profile | null}
       email={user.email ?? ""}
       isAdmin={isAdmin}
+      isNewUser={setup === "1"}
     />
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { updateProfile } from "./actions";
+import { updateProfile, changePassword } from "./actions";
 import { avatarUrl, randomSeed } from "@/lib/avatar";
 import { AVATAR_STYLES, AVATAR_STYLE_LABELS, type Profile, type AvatarStyle } from "@/types/database";
 import { COUNTRIES } from "@/data/countries";
@@ -15,7 +15,7 @@ const inputCls =
 const labelCls = "block text-xs font-black uppercase tracking-widest text-black mb-1";
 const errorCls = "text-red-600 text-xs mt-1 font-bold";
 
-type Props = { profile: Profile | null; email: string; isAdmin?: boolean };
+type Props = { profile: Profile | null; email: string; isAdmin?: boolean; isNewUser?: boolean };
 
 const EMPTY_PROFILE: Profile = {
   id: "",
@@ -38,7 +38,7 @@ const EMPTY_PROFILE: Profile = {
   updated_at: new Date().toISOString(),
 };
 
-export default function ProfileClient({ profile: rawProfile, email, isAdmin }: Props) {
+export default function ProfileClient({ profile: rawProfile, email, isAdmin, isNewUser }: Props) {
   const profile = rawProfile ?? EMPTY_PROFILE;
   const router = useRouter();
 
@@ -117,6 +117,14 @@ export default function ProfileClient({ profile: rawProfile, email, isAdmin }: P
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-2xl mx-auto px-4 py-8">
+
+        {/* New user welcome banner */}
+        {isNewUser && (
+          <div className="bg-yellow-400 border-2 border-black px-5 py-4 mb-6">
+            <p className="font-black text-black text-sm uppercase tracking-wide">Welcome to ogogog!</p>
+            <p className="text-sm text-black mt-1">Set a username and country to complete your profile — then you can post listings and message other collectors.</p>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -400,7 +408,86 @@ export default function ProfileClient({ profile: rawProfile, email, isAdmin }: P
             </button>
           </div>
         </form>
+
+        {/* Password change */}
+        <PasswordSection />
       </main>
+    </div>
+  );
+}
+
+function PasswordSection() {
+  const [open, setOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("saving");
+    setErrorMsg("");
+    const fd = new FormData();
+    fd.set("new_password", newPassword);
+    fd.set("confirm_password", confirmPassword);
+    const result = await changePassword(fd);
+    if ("error" in result) {
+      setErrorMsg(result.error);
+      setStatus("error");
+    } else {
+      setStatus("done");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => { setOpen(false); setStatus("idle"); }, 2000);
+    }
+  }
+
+  return (
+    <div className="border-2 border-black mt-6">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-xs font-black uppercase tracking-widest text-black">Change password</span>
+        <span className="text-sm font-black text-gray-500">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <form onSubmit={handleSubmit} className="border-t-2 border-black px-6 py-5 space-y-4">
+          <div>
+            <label className={labelCls}>New password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className={inputCls}
+              placeholder="At least 8 characters"
+              required
+              minLength={8}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Confirm new password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={inputCls}
+              placeholder="Repeat the password"
+              required
+            />
+          </div>
+          {errorMsg && <p className={errorCls}>{errorMsg}</p>}
+          {status === "done" && <p className="text-green-700 text-xs font-bold">Password updated.</p>}
+          <button
+            type="submit"
+            disabled={status === "saving"}
+            className="w-full py-2.5 bg-black text-white text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+          >
+            {status === "saving" ? "Updating…" : "Update password"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
