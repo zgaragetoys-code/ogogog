@@ -220,14 +220,24 @@ export async function generateMetadata({
     .eq("id", id)
     .maybeSingle();
 
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ogogog-marketplace.com";
   const l = data as { listing_type: string; title: string | null; card?: { name: string; set_name: string } | null } | null;
   const title = l?.card?.name
     ? `${l.card.name} — ${l.listing_type === "for_sale" ? "For Sale" : "Wanted"} | ogogog`
     : l?.title
     ? `${l.title} | ogogog`
     : "Listing | ogogog";
+  const description = l?.card?.name
+    ? `${l.listing_type === "for_sale" ? "Buy" : "Find"} ${l.card.name}${l.card?.set_name ? ` from ${l.card.set_name}` : ""} on ogogog.`
+    : "View this listing on ogogog Pokemon TCG Marketplace.";
 
-  return { title };
+  return {
+    title,
+    description,
+    alternates: { canonical: `${base}/listings/${id}` },
+    openGraph: { title, description, url: `${base}/listings/${id}`, siteName: "ogogog", type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────

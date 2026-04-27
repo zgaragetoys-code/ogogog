@@ -255,6 +255,23 @@ export default async function BrowsePage({
             )}
           </>
         )}
+        {/* Signup CTA for logged-out users */}
+        {!user && (
+          <div className="mt-12 border-2 border-black p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-lg font-black text-black uppercase tracking-tight">Ready to sell or find cards?</p>
+              <p className="text-sm text-gray-700 mt-1">Create a free account to post listings, message sellers, and bookmark finds.</p>
+            </div>
+            <div className="flex gap-3 shrink-0">
+              <Link href="/auth/signup" className="bg-black text-white px-5 py-2.5 text-sm font-black hover:bg-zinc-800 transition-colors">
+                Sign up free
+              </Link>
+              <Link href="/auth/login" className="border-2 border-black text-black px-5 py-2.5 text-sm font-black hover:bg-black hover:text-white transition-colors">
+                Log in
+              </Link>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -56,6 +56,18 @@ export async function createListing(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in to create a listing." };
 
+  // Rate limit: max 20 listings per 24 hours
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentListings } = await supabase
+    .from("listings")
+    .select("id")
+    .eq("user_id", user.id)
+    .gte("created_at", since24h)
+    .limit(21);
+  if ((recentListings ?? []).length >= 20) {
+    return { error: "You've reached the limit of 20 listings per 24 hours." };
+  }
+
   const mode = formData.get("mode") as string | null;
   const listingTypeRaw = formData.get("listing_type") as string | null;
   if (!listingTypeRaw || !LISTING_TYPES.includes(listingTypeRaw as ListingType)) {

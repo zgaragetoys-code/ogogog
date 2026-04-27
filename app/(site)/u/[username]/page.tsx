@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { avatarUrl } from "@/lib/avatar";
 import { COUNTRIES } from "@/data/countries";
@@ -13,6 +14,23 @@ import BookmarkButton from "@/components/BookmarkButton";
 type ListingData = Listing & {
   card: { name: string; set_name: string; card_number: string; image_url: string | null; product_type: string } | null;
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
+  const { username } = await params;
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ogogog-marketplace.com";
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("display_name, username").eq("username", username).maybeSingle();
+  const name = data?.display_name ?? data?.username ?? username;
+  const title = `${name} (@${username}) — ogogog`;
+  const description = `View ${name}'s Pokemon TCG listings and collection on ogogog.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `${base}/u/${username}` },
+    openGraph: { title, description, url: `${base}/u/${username}`, siteName: "ogogog", type: "profile" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function PublicProfilePage({
   params,
