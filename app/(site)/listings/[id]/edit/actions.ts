@@ -50,12 +50,15 @@ export async function updateListing(
 
   const { data: listing } = await supabase
     .from("listings")
-    .select("id, user_id, card_id, card:cards(product_type)")
+    .select("id, user_id, card_id, status, card:cards(product_type)")
     .eq("id", listingId)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!listing) return { error: "Listing not found." };
+  if ((listing as unknown as { status: string }).status !== "active") {
+    return { error: "This listing is no longer active and cannot be edited." };
+  }
 
   const isCard = !!listing.card_id;
 

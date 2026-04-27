@@ -18,11 +18,13 @@ export async function createBoardPost(
   const validTypes = ["general", "buying", "selling", "trading", "looking_for"];
   if (!validTypes.includes(postType)) return { error: "Invalid post type." };
 
-  if (raw.trim().length > 500) return { error: "Post too long (500 chars max)." };
-  const mod = checkProfanity(raw);
+  const trimmed = raw.trim();
+  if (!trimmed) return { error: "Post cannot be empty." };
+  if (trimmed.length > 500) return { error: "Post too long (500 chars max)." };
+  const mod = checkProfanity(trimmed);
   if (!mod.ok) return { error: mod.reason };
 
-  // Cooldown check
+  // Best-effort cooldown check — race conditions possible under concurrent requests
   const since = new Date(Date.now() - POST_COOLDOWN_MS).toISOString();
   const { count } = await supabase
     .from("board_posts")
@@ -34,10 +36,19 @@ export async function createBoardPost(
 
   const { error } = await supabase.from("board_posts").insert({
     user_id: user.id,
-    content: raw.trim(),
+    content: trimmed,
     post_type: postType,
   });
-  if (error) return { error: "Failed to create post." };
+  if (error) {
+    const { count: recent } = await supabase
+      .from("board_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .gte("created_at", since);
+    if ((recent ?? 0) > 0) return { error: "Please wait 30 seconds between posts." };
+    return { error: "Failed to create post." };
+  }
 
   revalidatePath("/board");
 }

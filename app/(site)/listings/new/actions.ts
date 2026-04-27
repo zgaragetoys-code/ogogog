@@ -284,6 +284,17 @@ export async function createListing(
     return { error: "Failed to create listing. Please try again." };
   }
 
+  // Post-insert rate limit guard — catches concurrent-request races
+  const { count: postInsertCount } = await supabase
+    .from("listings")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", since24h);
+  if ((postInsertCount ?? 0) > 20 && insertedListing?.id) {
+    await supabase.from("listings").delete().eq("id", insertedListing.id);
+    return { error: "You've reached the limit of 20 listings per 24 hours." };
+  }
+
   // Notify users with active wanted listings for this card
   if (insertedListing?.listing_type === "for_sale" && insertedListing?.card_id) {
     try {

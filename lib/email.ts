@@ -2,6 +2,11 @@ import { Resend } from "resend";
 
 const FROM = "ogogog <zgarage.toys@gmail.com>";
 
+function h(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+}
+
 export async function sendWantedMatchNotification({
   toEmail,
   cardName,
@@ -31,8 +36,8 @@ export async function sendWantedMatchNotification({
         </div>
         <p style="margin:0 0 16px">A card on your wanted list just appeared:</p>
         <div style="border:2px solid #000;padding:14px;margin:0 0 20px">
-          <p style="margin:0 0 4px;font-size:18px;font-weight:bold">${cardName}</p>
-          <p style="margin:0 0 4px;color:#555">${setName}</p>
+          <p style="margin:0 0 4px;font-size:18px;font-weight:bold">${h(cardName)}</p>
+          <p style="margin:0 0 4px;color:#555">${h(setName)}</p>
           <p style="margin:0;font-size:16px;font-weight:bold">${priceStr}</p>
         </div>
         <a href="${listingUrl}" style="display:inline-block;background:#000;color:#fff;padding:12px 24px;text-decoration:none;font-weight:bold;font-size:14px">
@@ -74,9 +79,9 @@ export async function sendMessageNotification({
         <div style="border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px">
           <strong style="font-size:20px;letter-spacing:-0.5px">ogogog</strong>
         </div>
-        <p style="margin:0 0 8px"><strong>${fromName}</strong> sent you a message about <strong>${listingTitle}</strong>:</p>
+        <p style="margin:0 0 8px"><strong>${h(fromName)}</strong> sent you a message about <strong>${h(listingTitle)}</strong>:</p>
         <div style="border:2px solid #000;padding:14px;margin:16px 0;background:#f9f9f9">
-          <p style="margin:0;white-space:pre-wrap">${messageContent}</p>
+          <p style="margin:0;white-space:pre-wrap">${h(messageContent)}</p>
         </div>
         <a href="${threadUrl}" style="display:inline-block;background:#000;color:#fff;padding:12px 24px;text-decoration:none;font-weight:bold;font-size:14px">
           Reply →

@@ -11,6 +11,16 @@ export async function sendMessage(listingId: string, receiverId: string, content
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
+  if (receiverId === user.id) return { error: "You cannot message yourself." };
+
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("user_id")
+    .eq("id", listingId)
+    .maybeSingle();
+  if (!listing) return { error: "Listing not found." };
+  if (listing.user_id !== receiverId) return { error: "Invalid recipient." };
+
   const trimmed = content.trim();
   if (!trimmed) return { error: "Message cannot be empty." };
   if (trimmed.length > 2000) return { error: "Message too long." };

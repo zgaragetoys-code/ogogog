@@ -23,9 +23,15 @@ export async function sendChatMessage(
   if (!profile?.global_chat_enabled)
     return { error: "Global chat is disabled in your settings." };
 
-  const modResult = moderateMessage(raw);
+  const trimmed = raw.trim();
+  if (!trimmed) return { error: "Message cannot be empty." };
+  if (trimmed.length > 280) return { error: "Message too long (280 chars max)." };
+
+  const modResult = moderateMessage(trimmed);
   if (!modResult.ok) return { error: modResult.reason };
 
+  // Best-effort cooldown check — race conditions possible under concurrent requests.
+  // DB CHECK(length >= 1 AND length <= 280) is the authoritative content guard.
   const since = new Date(Date.now() - COOLDOWN_MS).toISOString();
   const { count } = await supabase
     .from("global_chat_messages")
@@ -38,9 +44,18 @@ export async function sendChatMessage(
 
   const { error } = await supabase.from("global_chat_messages").insert({
     user_id: user.id,
-    content: raw.trim(),
+    content: trimmed,
   });
-  if (error) return { error: "Failed to send message." };
+  if (error) {
+    const { count: recent } = await supabase
+      .from("global_chat_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .gte("created_at", since);
+    if ((recent ?? 0) > 0) return { error: "Please wait 10 seconds between messages." };
+    return { error: "Failed to send message." };
+  }
 }
 
 export async function deleteChatMessage(

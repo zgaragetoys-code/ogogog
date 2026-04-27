@@ -155,6 +155,11 @@ export default function CollectionImport({ onImported }: Props) {
     setStep("importing");
     startTransition(async () => {
       const result = await bulkImportCollection(toImport);
+      if ("error" in result && result.error) {
+        setError(result.error);
+        setStep("idle");
+        return;
+      }
       setStep("done");
       onImported(result.count);
     });

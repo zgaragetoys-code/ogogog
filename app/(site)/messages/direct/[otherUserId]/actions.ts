@@ -11,6 +11,8 @@ export async function sendDirectMessage(receiverId: string, content: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
+  if (receiverId === user.id) return { error: "You cannot message yourself." };
+
   const trimmed = content.trim();
   if (!trimmed) return { error: "Message cannot be empty." };
   if (trimmed.length > 2000) return { error: "Message too long." };

@@ -9,14 +9,16 @@ export async function markAsSold(listingId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("listings")
     .update({ status: "sold" })
     .eq("id", listingId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    console.error("markAsSold:", error.message);
+  if (error || !updated) {
+    revalidatePath(`/listings/${listingId}`);
     return;
   }
 
@@ -31,14 +33,16 @@ export async function cancelListing(listingId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("listings")
     .update({ status: "cancelled" })
     .eq("id", listingId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    console.error("cancelListing:", error.message);
+  if (error || !updated) {
+    revalidatePath(`/listings/${listingId}`);
     return;
   }
 

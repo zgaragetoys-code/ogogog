@@ -15,6 +15,7 @@ export default async function DirectThreadPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/auth/login?next=/messages/direct/${otherUserId}`);
+  if (user.id === otherUserId) redirect("/messages");
 
   const { data: otherProfile } = await supabase
     .from("profiles")

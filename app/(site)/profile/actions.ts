@@ -80,6 +80,14 @@ export async function updateProfile(
     .maybeSingle();
   if (existing) return { error: "That username is already taken." };
 
+  // Capture current username before update so we can invalidate old cache
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .maybeSingle();
+  const oldUsername = current?.username;
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
@@ -110,6 +118,10 @@ export async function updateProfile(
   revalidatePath("/profile");
   revalidatePath(`/u/${username}`);
   revalidatePath(`/u/${username}/collection`);
+  if (oldUsername && oldUsername !== username) {
+    revalidatePath(`/u/${oldUsername}`);
+    revalidatePath(`/u/${oldUsername}/collection`);
+  }
 }
 
 export async function changePassword(

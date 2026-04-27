@@ -22,9 +22,14 @@ export async function bulkImportCollection(rows: ImportRow[]) {
     for_sale: false,
   }));
 
-  await supabase
+  const { error } = await supabase
     .from("collection_items")
     .upsert(records, { onConflict: "user_id,card_id", ignoreDuplicates: false });
+
+  if (error) {
+    console.error("bulkImportCollection:", error.message);
+    return { count: 0, error: "Import failed. Please try again." };
+  }
 
   revalidatePath("/collection");
   return { count: rows.length };

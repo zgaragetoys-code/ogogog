@@ -24,6 +24,7 @@ export default async function EditListingPage({
   if (!rawListing) notFound();
 
   const listing = rawListing as unknown as Listing & { card?: Card | null };
+  if (listing.status !== "active") redirect(`/listings/${id}`);
 
   return (
     <div className="min-h-screen bg-white">
