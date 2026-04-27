@@ -10,7 +10,7 @@ export default function FeatureYourListingPage() {
           <h1 className="text-2xl font-black text-black uppercase tracking-tight flex items-center gap-2">
             <span className="text-yellow-400">✦</span> Feature your listing
           </h1>
-          <p className="text-sm text-gray-700 mt-1">Get your card or product seen by more collectors.</p>
+          <p className="text-sm text-gray-700 mt-1">Get your card or product seen by more collectors — free.</p>
         </div>
 
         <div className="border-2 border-black p-6 mb-4">
@@ -26,30 +26,15 @@ export default function FeatureYourListingPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-400 font-black mt-0.5">✦</span>
-              Stays featured for the full duration you pay for
+              Completely free — no charge, no catch
             </li>
           </ul>
-        </div>
-
-        <div className="border-2 border-black p-6 mb-4">
-          <h2 className="text-xs font-black uppercase tracking-widest text-black mb-4">Pricing</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="border-2 border-black p-5 text-center">
-              <p className="text-3xl font-black text-black">$5</p>
-              <p className="text-sm text-gray-700 mt-1 font-medium">7 days</p>
-            </div>
-            <div className="border-2 border-yellow-400 bg-yellow-50 p-5 text-center">
-              <p className="text-3xl font-black text-black">$15</p>
-              <p className="text-sm text-gray-700 mt-1 font-medium">30 days</p>
-              <p className="text-xs font-black text-yellow-700 uppercase tracking-widest mt-1">Best value</p>
-            </div>
-          </div>
         </div>
 
         <div className="border-2 border-black p-6">
           <h2 className="text-xs font-black uppercase tracking-widest text-black mb-3">How to get featured</h2>
           <p className="text-sm text-gray-700 mb-5">
-            Email us with a link to your listing and how long you want it featured. We&apos;ll send payment details. Once confirmed, your listing goes live within 24 hours.
+            Email us with a link to your listing. We&apos;ll get it featured within 24 hours.
           </p>
           <a
             href={`mailto:${CONTACT_EMAIL}?subject=Feature my listing`}
