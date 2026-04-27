@@ -1,9 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { checkProfanity } from "@/lib/moderation";
+import { sendWantedMatchNotification } from "@/lib/email";
 import {
   LISTING_TYPES,
   CONDITION_TYPES,
@@ -249,34 +250,83 @@ export async function createListing(
   }
 
   // ── Insert ─────────────────────────────────────────────────────────────
-  const { error: insertError } = await supabase.from("listings").insert({
-    user_id: user.id,
-    card_id: cardId,
-    title,
-    custom_category: customCategory,
-    set_year: setYear,
-    set_series: setSeries,
-    listing_image_url: listingImageUrl,
-    listing_type: listingType,
-    condition_type: conditionType,
-    raw_condition: rawCondition,
-    sealed_condition: sealedCondition,
-    grading_company: gradingCompany,
-    grade,
-    cert_number: certNumber,
-    condition_generic: conditionGeneric,
-    price_type: priceType,
-    price,
-    notes,
-    photo_links: photoLinks,
-    photo_notes: photoNotes,
-    status: "active",
-    is_featured: false,
-  });
+  const { data: insertedListing, error: insertError } = await supabase
+    .from("listings")
+    .insert({
+      user_id: user.id,
+      card_id: cardId,
+      title,
+      custom_category: customCategory,
+      set_year: setYear,
+      set_series: setSeries,
+      listing_image_url: listingImageUrl,
+      listing_type: listingType,
+      condition_type: conditionType,
+      raw_condition: rawCondition,
+      sealed_condition: sealedCondition,
+      grading_company: gradingCompany,
+      grade,
+      cert_number: certNumber,
+      condition_generic: conditionGeneric,
+      price_type: priceType,
+      price,
+      notes,
+      photo_links: photoLinks,
+      photo_notes: photoNotes,
+      status: "active",
+      is_featured: false,
+    })
+    .select("id, listing_type, card_id, price")
+    .maybeSingle();
 
   if (insertError) {
     console.error("createListing:", insertError.message, insertError.code);
     return { error: "Failed to create listing. Please try again." };
+  }
+
+  // Notify users with active wanted listings for this card
+  if (insertedListing?.listing_type === "for_sale" && insertedListing?.card_id) {
+    try {
+      const adminClient = createAdminClient();
+      const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ogogog-marketplace.com";
+
+      const { data: wantedListings } = await supabase
+        .from("listings")
+        .select("user_id")
+        .eq("card_id", insertedListing.card_id)
+        .eq("listing_type", "wanted")
+        .eq("status", "active")
+        .neq("user_id", user.id);
+
+      if (wantedListings && wantedListings.length > 0) {
+        const [{ data: cardData }, { data: sellerProfile }] = await Promise.all([
+          supabase.from("cards").select("name, set_name").eq("id", insertedListing.card_id).maybeSingle(),
+          supabase.from("profiles").select("display_name, username").eq("id", user.id).maybeSingle(),
+        ]);
+
+        const sellerName = sellerProfile?.display_name ?? sellerProfile?.username ?? "A seller";
+        const listingUrl = `${SITE_URL}/listings/${insertedListing.id}`;
+
+        await Promise.all(
+          wantedListings.map(async (w) => {
+            const { data: wantedUser } = await adminClient.auth.admin.getUserById(w.user_id);
+            const email = wantedUser?.user?.email;
+            if (email) {
+              await sendWantedMatchNotification({
+                toEmail: email,
+                cardName: cardData?.name ?? "A card",
+                setName: cardData?.set_name ?? "",
+                price: insertedListing.price,
+                listingUrl,
+                sellerName,
+              });
+            }
+          })
+        );
+      }
+    } catch {
+      // Non-blocking — listing was already created
+    }
   }
 
   revalidatePath("/listings/mine");

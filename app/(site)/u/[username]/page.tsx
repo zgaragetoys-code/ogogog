@@ -136,6 +136,24 @@ export default async function PublicProfilePage({
             </div>
           </div>
 
+          {/* Stats strip — trust signals */}
+          <div className="border-t-2 border-black flex divide-x-2 divide-black">
+            <div className="flex-1 px-4 py-3 text-center">
+              <p className="text-lg font-black text-black leading-none">{allListings.length}</p>
+              <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide mt-0.5">Listings</p>
+            </div>
+            <div className="flex-1 px-4 py-3 text-center">
+              <p className="text-sm font-black text-black leading-none">{memberSince}</p>
+              <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide mt-0.5">Member since</p>
+            </div>
+            {location && (
+              <div className="flex-1 px-4 py-3 text-center">
+                <p className="text-sm font-black text-black leading-none truncate">{location}</p>
+                <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide mt-0.5">Location</p>
+              </div>
+            )}
+          </div>
+
           {/* Bottom: action buttons */}
           <div className="border-t-2 border-black flex divide-x-2 divide-black">
             {currentUser && currentUser.id === profile.id && (

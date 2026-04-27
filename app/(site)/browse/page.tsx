@@ -190,6 +190,16 @@ export default async function BrowsePage({
     bookmarkedIds = new Set((bms ?? []).map((b) => b.target_id));
   }
 
+  // Recently sold — social proof strip (last 5)
+  const { data: soldData } = await supabase
+    .from("listings")
+    .select("id, title, price, listing_type, card:cards!card_id(name, image_url)")
+    .eq("status", "sold")
+    .order("updated_at", { ascending: false })
+    .limit(5);
+  type SoldRow = { id: string; title: string | null; price: number | null; listing_type: string; card: { name: string; image_url: string | null } | null };
+  const soldItems = ((soldData ?? []) as unknown as SoldRow[]);
+
   const featuredItems = (featuredData ?? []) as unknown as FeedListing[];
   const sorted = sortFeed(allItems, sort);
   const totalRegular = sorted.length;
@@ -255,6 +265,38 @@ export default async function BrowsePage({
             )}
           </>
         )}
+        {/* Recently sold — shows marketplace is active */}
+        {soldItems.length > 0 && (
+          <div className="mt-12 border-t-2 border-black pt-8">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-700 mb-4">Recently sold</p>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {soldItems.map((item) => {
+                const name = item.card?.name ?? item.title ?? "Listing";
+                const img = item.card?.image_url ?? null;
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/listings/${item.id}`}
+                    className="shrink-0 w-24 group"
+                  >
+                    <div className="relative border-2 border-black overflow-hidden">
+                      {img ? (
+                        <img src={img} alt={name} className="w-full h-auto grayscale opacity-60" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full aspect-[2.5/3.5] bg-gray-100" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="bg-black text-white text-[10px] font-black px-1.5 py-0.5 uppercase tracking-wide rotate-[-8deg]">SOLD</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-gray-700 truncate mt-1 group-hover:text-black transition-colors">{name}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Signup CTA for logged-out users */}
         {!user && (
           <div className="mt-12 border-2 border-black p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
